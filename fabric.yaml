@@ -1,3 +1,7 @@
 activeProfile: default
 profiles:
-  default: {}
+  default:
+    semanticModels:
+      plModel:
+        workspaceId: 34b658ce-c9fc-46d5-8d43-7d9751148f12
+        itemId: 682b2c38-8b19-47c4-9d14-3ba53294020a
