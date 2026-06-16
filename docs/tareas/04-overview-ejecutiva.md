@@ -1,19 +1,15 @@
-# Tarea 04 — overview ejecutiva
+# Tarea 04 — branding y diseño
 
 ## Objetivo
 
-Implementar la landing del cuadro de mando para dirección con KPIs, tendencia y comparativas principales.
+Trasladar la identidad visual de Dataxbi al informe manteniendo una experiencia ejecutiva clara en light/dark mode.
 
 ## Entregables
 
-- Tarjetas KPI
-- Tendencia mensual
-- Comparativa regional
-- Mix por canal
-- Bloque de atención/resumen
-- Filtrado cruzado entre visuales de la página
+- `src/global.css` con nueva paleta y tipografías inspiradas en dataxbi.com
+- `index.html` con favicon (`resources/icon.ico`), `lang="es"` y metadatos base
+- Cabecera con logo corporativo (`resources/dataxbi-logo.png`)
 
 ## Criterio de terminado
 
-- Un directivo puede entender el estado del negocio sin navegar a las páginas de detalle.
-- Una selección en un visual actualiza el resto de la página y puede limpiarse de forma explícita.
+- La interfaz transmite identidad Dataxbi sin romper accesibilidad ni legibilidad.

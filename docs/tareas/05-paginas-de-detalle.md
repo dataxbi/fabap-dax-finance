@@ -1,16 +1,17 @@
-# Tarea 05 — páginas de detalle
+# Tarea 05 — informe P&L
 
 ## Objetivo
 
-Construir las páginas de Regiones, Portfolio comercial y Clientes para profundizar en el análisis.
+Construir el informe P&L con tabla AG Grid y gráficos AG Charts con datos reales del modelo semántico.
 
 ## Entregables
 
-- Página de Regiones
-- Página de Portfolio comercial
-- Página de Clientes
-- Visuales y tablas de soporte
+- Layout en `src/App.tsx`
+- Tabla P&L con AG Grid Community: filas de cuenta/categoría, columnas de periodo, variaciones absolutas y porcentuales
+- Gráficos AG Charts Community: tendencia de ingresos, gastos y resultado
+- Formato es-ES: moneda sin decimales con separador de miles, fechas en español
 
 ## Criterio de terminado
 
-- Cada página ofrece una lectura más profunda y coherente con la overview.
+- El informe muestra datos reales del modelo P&L con formato correcto.
+- La tabla y los gráficos se adaptan a light/dark mode con la identidad Dataxbi.

@@ -1,15 +1,16 @@
-# Tarea 03 — branding y diseño
+# Tarea 03 — schema y consultas DAX
 
 ## Objetivo
 
-Trasladar la identidad visual de Dataxbi al dashboard manteniendo una experiencia ejecutiva clara en light/dark mode.
+Descubrir el schema del modelo P&L y definir las consultas DAX necesarias para el informe.
 
 ## Entregables
 
-- `src/global.css` con nueva paleta y tipografías
-- `index.html` con favicon, idioma y metadatos base
-- Cabecera/navegación con logo corporativo
+- Carpeta `src/queries/pl/` organizada por visual
+- Archivos `.dax` validados contra el modelo real
+- Factories de query preparadas con metadatos de columnas
 
 ## Criterio de terminado
 
-- La interfaz transmite identidad Dataxbi sin romper accesibilidad ni legibilidad.
+- Todas las visualizaciones consumen datos reales del modelo sin datos mock.
+- Las queries devuelven las columnas esperadas para tabla P&L y gráficos.

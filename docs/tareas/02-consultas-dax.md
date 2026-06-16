@@ -1,17 +1,15 @@
-# Tarea 02 — consultas DAX
+# Tarea 02 — instalación de AG Grid y AG Charts Community
 
 ## Objetivo
 
-Definir las consultas DAX por página y por visual, reutilizando las medidas del modelo y añadiendo comparativas temporales en la capa de query.
+Añadir AG Grid Community y AG Charts Community al proyecto y crear helpers de integración con el SDK de Fabric.
 
 ## Entregables
 
-- Carpeta `src/queries/` organizada por dominio
-- Archivos `.dax` validados
-- Metadatos de columnas y especificaciones Vega-Lite
-- Factories de query preparadas para aceptar filtros dinámicos desde interacción en Overview
+- Dependencias instaladas: `ag-grid-community`, `ag-grid-react`, `ag-charts-community`, `ag-charts-react`
+- Helper en `src/lib/` para convertir `DataTable` al formato de filas/columnas de AG Grid
+- Configuración base de tema AG Grid compatible con light/dark mode Dataxbi
 
 ## Criterio de terminado
 
-- Todas las visualizaciones y tablas consumen datos reales del modelo sin datos mock.
-- Las queries de Overview admiten parámetros de filtro para periodo, región, canal o categoría cuando proceda.
+- AG Grid y AG Charts renderizan correctamente en el proyecto con datos de prueba.
