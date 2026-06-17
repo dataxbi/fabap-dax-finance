@@ -1,7 +1,7 @@
 import {
-    AllCommunityModule as AgGridAllCommunityModule,
+    AllEnterpriseModule as AgGridAllEnterpriseModule,
     ModuleRegistry as AgGridModuleRegistry,
-} from "ag-grid-community";
+} from "ag-grid-enterprise";
 import {
     AllCommunityModule as AgChartsAllCommunityModule,
     ModuleRegistry as AgChartsModuleRegistry,
@@ -12,7 +12,7 @@ let registered = false;
 export function registerAgCommunityModules() {
     if (registered) return;
 
-    AgGridModuleRegistry.registerModules([AgGridAllCommunityModule]);
+    AgGridModuleRegistry.registerModules([AgGridAllEnterpriseModule]);
     AgChartsModuleRegistry.registerModules([AgChartsAllCommunityModule]);
     registered = true;
 }

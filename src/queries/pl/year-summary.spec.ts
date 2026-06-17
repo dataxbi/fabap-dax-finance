@@ -7,6 +7,8 @@ describe("yearSummary", () => {
 
         expect(result.connection).toBe("plModel");
         expect(result.query).toContain("'Fecha'[Year]");
+        expect(result.query).toContain('"Importe AA"');
         expect(result.columnMetadata["[EBITDA]"].format).toBe("$#,##0.00");
+        expect(result.columnMetadata["[Presupuesto AA]"].format).toBe("$#,##0.00");
     });
 });

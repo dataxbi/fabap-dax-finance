@@ -1,0 +1,22 @@
+DEFINE
+    VAR _LastMonthSort =
+        CALCULATE(
+            MAX('Fecha'[Year Month Sort]),
+            ALL('Fecha')
+        )
+EVALUATE
+    SUMMARIZECOLUMNS(
+        'Cuenta'[Account],
+        'Cuenta'[Parent Account],
+        'Fecha'[Year Month Sort],
+        'Fecha'[Year Month],
+        FILTER(
+            ALL('Fecha'[Year Month Sort]),
+            'Fecha'[Year Month Sort] > _LastMonthSort - 12
+                && 'Fecha'[Year Month Sort] <= _LastMonthSort
+        ),
+        "Importe", [Importe]
+    )
+ORDER BY
+    'Cuenta'[Account],
+    'Fecha'[Year Month Sort]

@@ -11,11 +11,15 @@ describe("plTable", () => {
             "Cuenta[Order]",
             "Cuenta[Level]",
             "Cuenta[Account]",
+            "Cuenta[Parent Account]",
             "Cuenta[Sign]",
             "[Importe]",
             "[Presupuesto]",
+            "[Importe AA]",
             "[Variacion]",
             "[Variacion %]",
+            "[Variacion AA]",
+            "[Variacion AA %]",
         ]);
     });
 });

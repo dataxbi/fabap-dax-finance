@@ -4,14 +4,18 @@ DEFINE
             'Cuenta'[Order],
             'Cuenta'[Level],
             'Cuenta'[Account],
+            'Cuenta'[Parent Account],
             'Cuenta'[Sign],
             "Importe", [Importe],
-            "Presupuesto", [Presupuesto]
+            "Presupuesto", [Presupuesto],
+            "Importe AA", CALCULATE([Importe], DATEADD('Fecha'[Date], -1, YEAR))
         )
 EVALUATE
     ADDCOLUMNS(
         _Base,
         "Variacion", [Importe] - [Presupuesto],
-        "Variacion %", DIVIDE([Importe] - [Presupuesto], [Presupuesto])
+        "Variacion %", DIVIDE([Importe] - [Presupuesto], [Presupuesto]),
+        "Variacion AA", [Importe] - [Importe AA],
+        "Variacion AA %", DIVIDE([Importe] - [Importe AA], [Importe AA])
     )
 ORDER BY 'Cuenta'[Order]

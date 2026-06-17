@@ -1,15 +1,29 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+interface StatusCardDetail {
+    label: string;
+    value: string;
+    tone?: "default" | "positive" | "negative";
+}
+
 interface StatusCardProps {
     label: string;
     value: string;
     detail?: string;
     tone?: "default" | "warning" | "success";
     icon?: ReactNode;
+    comparisons?: StatusCardDetail[];
 }
 
-export function StatusCard({ label, value, detail, tone = "default", icon }: StatusCardProps) {
+export function StatusCard({
+    label,
+    value,
+    detail,
+    tone = "default",
+    icon,
+    comparisons = [],
+}: StatusCardProps) {
     return (
         <section
             className={cn(
@@ -37,6 +51,27 @@ export function StatusCard({ label, value, detail, tone = "default", icon }: Sta
                 <p className="mt-s text-200 leading-200 text-muted-foreground">
                     {detail}
                 </p>
+            ) : null}
+            {comparisons.length > 0 ? (
+                <div className="mt-m space-y-xs border-t border-border/70 pt-m">
+                    {comparisons.map((comparison) => (
+                        <div key={comparison.label} className="flex items-center justify-between gap-m">
+                            <span className="text-200 leading-200 text-muted-foreground">
+                                {comparison.label}
+                            </span>
+                            <span
+                                className={cn(
+                                    "rounded-full px-s py-xxs text-200 leading-200 font-semibold",
+                                    comparison.tone === "positive" && "pl-ui-chip-positive",
+                                    comparison.tone === "negative" && "pl-ui-chip-negative",
+                                    (!comparison.tone || comparison.tone === "default") && "pl-ui-chip-neutral",
+                                )}
+                            >
+                                {comparison.value}
+                            </span>
+                        </div>
+                    ))}
+                </div>
             ) : null}
         </section>
     );

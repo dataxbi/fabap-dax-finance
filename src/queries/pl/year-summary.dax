@@ -3,8 +3,11 @@ SUMMARIZECOLUMNS(
     'Fecha'[Year],
     "Importe", [Importe],
     "Presupuesto", [Presupuesto],
+    "Presupuesto AA", CALCULATE([Presupuesto], DATEADD('Fecha'[Date], -1, YEAR)),
+    "Importe AA", CALCULATE([Importe], DATEADD('Fecha'[Date], -1, YEAR)),
     "Gastos", [Gastos],
     "EBITDA", [EBITDA],
+    "EBITDA AA", CALCULATE([EBITDA], DATEADD('Fecha'[Date], -1, YEAR)),
     "Cash Flow", [Cash Flow]
 )
 ORDER BY 'Fecha'[Year]
