@@ -1,12 +1,12 @@
-import { AlertTriangle, BarChart3, Database, RefreshCw, Table2 } from "lucide-react";
+import { AlertTriangle, BarChart3, Database, RefreshCw, Search, Table2 } from "lucide-react";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
-import { AllCommunityModule, type ColDef } from "ag-grid-community";
+import { AllCommunityModule, type CellClassParams, type ColDef } from "ag-grid-community";
 import { AgCharts } from "ag-charts-react";
 import type { AgChartOptions } from "ag-charts-community";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { StatusCard } from "@/components/pl/status-card";
 import { registerAgCommunityModules } from "@/lib/ag-community-modules";
-import { formatCurrencyEs, formatPercentEs } from "@/lib/format";
+import { formatCurrencyEs } from "@/lib/format";
 import { toAgGridData, type GridRow } from "@/lib/ag-grid-data";
 import { toDataTable } from "@/lib/to-data-table";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
@@ -55,14 +55,8 @@ function toNumber(value: unknown) {
     return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function cellText(value: unknown, kind: "currency" | "percent" | "text" = "text") {
-    if (value == null || value === "") return "-";
-    if (kind === "currency") return formatCurrencyEs(value);
-    if (kind === "percent") return formatPercentEs(value);
-    return String(value);
-}
-
 export function PlReportShell() {
+    const [quickFilter, setQuickFilter] = useState("");
     const tableQuery = plTable();
     const yearlyQuery = yearSummary();
     const trendQuery = monthTrend();
@@ -104,6 +98,23 @@ export function PlReportShell() {
                 hide: ["CuentaOrder", "CuentaLevel", "CuentaSign"].includes(String(column.field)),
                 flex: column.field === "CuentaAccount" ? 1.4 : 1,
                 minWidth: column.field === "CuentaAccount" ? 180 : 120,
+                pinned: column.field === "CuentaAccount" ? ("left" as const) : undefined,
+                floatingFilter: !["CuentaOrder", "CuentaLevel", "CuentaSign"].includes(
+                    String(column.field),
+                ),
+                filter:
+                    column.field === "CuentaAccount" ? "agTextColumnFilter" : "agNumberColumnFilter",
+                cellClassRules:
+                    column.field === "Variacion" || column.field === "VariacionPct"
+                        ? {
+                              "pl-grid-positive": (params: CellClassParams<GridRow>) =>
+                                  toNumber(params.value) > 0,
+                              "pl-grid-negative": (params: CellClassParams<GridRow>) =>
+                                  toNumber(params.value) < 0,
+                              "pl-grid-neutral": (params: CellClassParams<GridRow>) =>
+                                  toNumber(params.value) === 0,
+                          }
+                        : undefined,
             })),
         };
     }, [plTableResult.data, tableQuery.columnMetadata]);
@@ -119,6 +130,17 @@ export function PlReportShell() {
     const latestPresupuesto = toNumber(latestYear?.Presupuesto);
     const latestEbitda = toNumber(latestYear?.EBITDA);
     const tableRowCount = gridData.rowData.length;
+    const summaryRow = useMemo<GridRow | undefined>(() => {
+        if (!latestYear) return undefined;
+        return {
+            CuentaAccount: `Resumen ${latestYearLabel}`,
+            Importe: latestImporte,
+            Presupuesto: latestPresupuesto,
+            Variacion: latestImporte - latestPresupuesto,
+            VariacionPct:
+                latestPresupuesto === 0 ? undefined : (latestImporte - latestPresupuesto) / latestPresupuesto,
+        };
+    }, [latestImporte, latestPresupuesto, latestYear, latestYearLabel]);
 
     const trendRows = useMemo(() => {
         if (trendResult.data?.status !== "success") return [];
@@ -181,61 +203,46 @@ export function PlReportShell() {
                         <Table2 className="icon-size-400" />
                     </div>
                 </div>
-                <div className="ag-theme-quartz h-full min-h-[320px] overflow-hidden rounded-xl border border-border">
+                <div className="mb-l flex flex-wrap items-center gap-m">
+                    <label className="flex min-w-[240px] flex-1 items-center gap-s rounded-lg border border-input bg-background px-m py-s text-300 leading-300 text-muted-foreground">
+                        <Search className="icon-size-200 shrink-0" />
+                        <input
+                            value={quickFilter}
+                            onChange={(event) => setQuickFilter(event.target.value)}
+                            className="w-full bg-transparent text-card-foreground outline-none placeholder:text-muted-foreground"
+                            placeholder="Buscar cuenta o importe"
+                        />
+                    </label>
+                </div>
+                <div className="ag-theme-quartz overflow-hidden rounded-xl border border-border">
                     <AgGridProvider modules={[AllCommunityModule]}>
                         <AgGridReact<GridRow>
                             key={gridData.columnDefs.length}
                             theme="legacy"
                             columnDefs={gridData.columnDefs}
                             rowData={gridData.rowData}
+                            pinnedBottomRowData={summaryRow ? [summaryRow] : []}
+                            quickFilterText={quickFilter}
                             defaultColDef={{
                                 flex: 1,
                                 minWidth: 120,
+                                sortable: true,
+                                resizable: true,
                             }}
+                            domLayout="autoHeight"
+                            rowSelection={{ mode: "multiRow", enableClickSelection: true }}
+                            rowClassRules={{
+                                "pl-grid-highlight-row": (params) =>
+                                    ["EBITDA", "Cash Flow"].includes(
+                                        String(params.data?.CuentaAccount ?? ""),
+                                    ),
+                            }}
+                            animateRows
                             overlayNoRowsTemplate="Sin datos P&L disponibles"
                             suppressDragLeaveHidesColumns
                         />
                     </AgGridProvider>
                 </div>
-                {tableRowCount > 0 ? (
-                    <div className="mt-l overflow-x-auto rounded-xl border border-border">
-                        <table className="min-w-full text-left text-300 leading-300">
-                            <thead className="bg-secondary text-secondary-foreground">
-                                <tr>
-                                    <th className="px-m py-s font-semibold">Cuenta</th>
-                                    <th className="px-m py-s text-right font-semibold">Importe</th>
-                                    <th className="px-m py-s text-right font-semibold">Presupuesto</th>
-                                    <th className="px-m py-s text-right font-semibold">Variacion</th>
-                                    <th className="px-m py-s text-right font-semibold">Variacion %</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {gridData.rowData.map((row) => (
-                                    <tr
-                                        key={String(row.CuentaAccount)}
-                                        className="border-t border-border text-card-foreground"
-                                    >
-                                        <td className="px-m py-s font-medium">
-                                            {cellText(row.CuentaAccount)}
-                                        </td>
-                                        <td className="px-m py-s text-right">
-                                            {cellText(row.Importe, "currency")}
-                                        </td>
-                                        <td className="px-m py-s text-right">
-                                            {cellText(row.Presupuesto, "currency")}
-                                        </td>
-                                        <td className="px-m py-s text-right">
-                                            {cellText(row.Variacion, "currency")}
-                                        </td>
-                                        <td className="px-m py-s text-right">
-                                            {cellText(row.VariacionPct, "percent")}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : null}
             </section>
 
             <section className="grid gap-l lg:grid-cols-3">
