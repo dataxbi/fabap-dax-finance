@@ -245,8 +245,7 @@ export function PlReportShell() {
                 </div>
             </section>
 
-            <section className="grid gap-l lg:grid-cols-3">
-                <div className="rounded-xl border border-border bg-card p-l shadow-sm lg:col-span-2">
+            <section className="rounded-xl border border-border bg-card p-l shadow-sm">
                     <div className="mb-l">
                         <h2 className="text-500 leading-500 font-semibold text-card-foreground">
                             Tendencia de resultado
@@ -264,22 +263,6 @@ export function PlReportShell() {
                             <AgCharts options={chartOptions} />
                         )}
                     </div>
-                </div>
-
-                <div className="rounded-xl border border-border bg-card p-l shadow-sm">
-                    <div className="flex items-start gap-m">
-                        <Database className="mt-xxs icon-size-400 shrink-0 text-primary" />
-                        <div>
-                            <h2 className="text-400 leading-400 font-semibold text-card-foreground">
-                                Modelo conectado
-                            </h2>
-                            <p className="mt-s text-300 leading-300 text-muted-foreground">
-                                Las consultas DAX de esta vista fueron validadas con `plModel`
-                                usando los nombres de columnas devueltos por el CLI.
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </section>
         </div>
     );
