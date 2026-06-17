@@ -1,0 +1,10 @@
+EVALUATE
+SUMMARIZECOLUMNS(
+    'Fecha'[Year],
+    "Importe", [Importe],
+    "Presupuesto", [Presupuesto],
+    "Gastos", [Gastos],
+    "EBITDA", [EBITDA],
+    "Cash Flow", [Cash Flow]
+)
+ORDER BY 'Fecha'[Year]

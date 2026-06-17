@@ -1,0 +1,17 @@
+DEFINE
+    VAR _Base =
+        SUMMARIZECOLUMNS(
+            'Cuenta'[Order],
+            'Cuenta'[Level],
+            'Cuenta'[Account],
+            'Cuenta'[Sign],
+            "Importe", [Importe],
+            "Presupuesto", [Presupuesto]
+        )
+EVALUATE
+    ADDCOLUMNS(
+        _Base,
+        "Variacion", [Importe] - [Presupuesto],
+        "Variacion %", DIVIDE([Importe] - [Presupuesto], [Presupuesto])
+    )
+ORDER BY 'Cuenta'[Order]
