@@ -2,7 +2,7 @@
 
 ## 1. Objetivo
 
-Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrecer una visión del resultado económico del negocio con tablas detalladas y gráficos de tendencia, usando **AG Grid Community** y **AG Charts Community** como librería de visuales.
+Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrecer una visión del resultado económico del negocio con tablas detalladas y gráficos de tendencia, usando tablas propias en React y visuales basados en **Vega-Lite**.
 
 ## 2. Fuente de datos
 
@@ -13,9 +13,9 @@ Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrece
 
 ## 3. Stack de visuales
 
-- **Tablas**: AG Grid Community (`ag-grid-community`, `ag-grid-react`)
-- **Gráficos**: AG Charts Community (`ag-charts-community`, `ag-charts-react`)
-- Se elimina la dependencia de `@microsoft/fabric-datagrid` y `@microsoft/fabric-visuals` para los visuales del informe
+- **Tablas**: componentes propios basados en `@tanstack/react-table`
+- **Gráficos**: especificaciones Vega-Lite consumidas desde `@microsoft/fabric-visuals`
+- Mantener consultas, metadatos de columna y specs desacoplados dentro de `src/queries/`
 
 ## 4. Alcance funcional
 
@@ -42,8 +42,8 @@ Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrece
 
 - Layout en `src/App.tsx`
 - Consultas organizadas en `src/queries/pl/`
-- Tablas con AG Grid Community
-- Gráficos con AG Charts Community
+- Tablas con componentes propios basados en TanStack Table
+- Gráficos con `VegaVisual` y specs Vega-Lite definidas en `src/queries/`
 - Conversión de resultados con `toDataTable` (o helper equivalente)
 
 ## 7. Validación

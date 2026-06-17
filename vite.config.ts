@@ -53,9 +53,6 @@ export default defineConfig({
             '@': resolve(projectRoot, 'src'),
         }
     },
-    optimizeDeps: {
-        include: ['ag-grid-community', 'ag-grid-react', 'ag-charts-community', 'ag-charts-react'],
-    },
     build: {
         commonjsOptions: {
             include: [/node_modules/],

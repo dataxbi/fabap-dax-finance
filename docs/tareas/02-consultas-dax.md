@@ -1,15 +1,15 @@
-# Tarea 02 — instalación de AG Grid y AG Charts Community
+# Tarea 02 — consultas DAX y capa de visualización
 
 ## Objetivo
 
-Añadir AG Grid Community y AG Charts Community al proyecto y crear helpers de integración con el SDK de Fabric.
+Definir las consultas DAX base y dejar preparada la capa de transformación de datos para tablas React y visuales Vega-Lite.
 
 ## Entregables
 
-- Dependencias instaladas: `ag-grid-community`, `ag-grid-react`, `ag-charts-community`, `ag-charts-react`
-- Helper en `src/lib/` para convertir `DataTable` al formato de filas/columnas de AG Grid
-- Configuración base de tema AG Grid compatible con light/dark mode Dataxbi
+- Consultas `.dax` organizadas en `src/queries/pl/`
+- Metadatos de columnas copiados de la salida real del CLI
+- Helpers en `src/lib/` para transformar `QueryTable`/`DataTable` al formato consumido por tablas React y visuales
 
 ## Criterio de terminado
 
-- AG Grid y AG Charts renderizan correctamente en el proyecto con datos de prueba.
+- Las consultas devuelven datos reales del modelo y pueden alimentar correctamente la tabla y los visuales definidos en la app.
