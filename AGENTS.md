@@ -2,7 +2,7 @@
 
 ## Purpose
 
-You will help the user build out this React-based web app that visualizes data from Power BI semantic models. The app fetches live data via DAX queries, renders charts and grids using Vega-Lite and a built-in DataGrid component, and supports light/dark theming. Your job is to discover the user's data, write correct DAX queries, build React components that fetch and display that data, and validate the result in the browser.
+You will help the user build out this React-based web app that visualizes data from Power BI semantic models. The app fetches live data via DAX queries, renders charts using Vega-Lite and renders tables using app-owned React table components, and supports light/dark theming. Your job is to discover the user's data, write correct DAX queries, build React components that fetch and display that data, and validate the result in the browser.
 
 ## Sub-Agent Delegation
 
@@ -211,9 +211,9 @@ Principles for overall aesthetics, theming, layout, and accessibility requiremen
 
 Use the `useSemanticModelQuery` hook from `src/hooks/use-semantic-model-query.ts` — components call the factory functions from `src/queries/` and destructure `{ connection, query, columnMetadata, vegaLiteSpec }` from the result.
 
-Use `toDataTable()` from `src/lib/to-data-table.ts` to convert the SDK's `QueryTable` (from `data.table`) into a `DataTable` by merging it with the `columnMetadata` from the factory function result. This applies everywhere the data is consumed like rendering in `VegaVisual` or `DataGrid` (pass the `DataTable` via their `data` prop), displaying values in custom components, or any other usage.
+Use `toDataTable()` from `src/lib/to-data-table.ts` to convert the SDK's `QueryTable` (from `data.table`) into a `DataTable` by merging it with the `columnMetadata` from the factory function result. This applies everywhere the data is consumed like rendering in `VegaVisual`, transforming rows for app-owned tables, displaying values in custom components, or any other usage.
 
-`VegaVisual` and `DataGrid` components should call factory functions for query + spec + columnMetadata — never define specs inline in component files. Refer to the [visuals](.agents/skills/visuals/SKILL.md) skill when building them.
+`VegaVisual` and app-owned table components should call factory functions for query + spec + columnMetadata — never define specs inline in component files. Refer to the [visuals](.agents/skills/visuals/SKILL.md) skill when building them.
 
 #### Example
 
@@ -222,7 +222,7 @@ import { revenueByRegion } from "@/queries/sales/revenue-by-region";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { toDataTable } from "@/lib/to-data-table";
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
-import { DataGrid } from "@microsoft/fabric-datagrid";
+import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 
 function RevenueByRegionChart() {
   const theme = useCssTheme();
@@ -249,12 +249,48 @@ function RevenueByRegionChart() {
   // toDataTable merges data.table with columnMetadata so that display names,
   // format strings, and cleaned field names are available to visuals.
   const dataTable = toDataTable(data.table, columnMetadata);
+  const rows = dataTable.rows.map((row) => ({
+    ProductsRegion: row[0],
+    TotalRevenue: row[1],
+  }));
+  const columns = [
+    { accessorKey: "ProductsRegion", header: "Region" },
+    { accessorKey: "TotalRevenue", header: "Total Revenue" },
+  ];
+  const table = useReactTable({
+    data: rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
-  // Pass the DataTable to VegaVisual (chart) or DataGrid (table) via the data prop.
+  // Pass the DataTable to VegaVisual (chart) and map rows into your app-owned table.
   return (
     <div>
       <VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />
-      <DataGrid data={dataTable} theme={theme} />
+      <table>
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

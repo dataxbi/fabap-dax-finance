@@ -3,7 +3,7 @@ name: visuals
 description: >
   Use when user wants to incorporate charts, graphs, data grid, 
   or other visual representations of data into their project.
-  Use VegaVisual and DataGrid components to create these visuals, 
+  Use VegaVisual and app-owned React table components to create these visuals, 
   utilizing the shared data types, formatting, theme, and interactivity hooks.
 ---
 
@@ -12,19 +12,19 @@ description: >
 ## Types of visuals
 There are 2 different types of visuals that can be used in a project:
 1. Charts and Graphs: These are used to represent data in a visual format, such as bar charts, line charts, pie charts, etc. These are built using vega-lite, see [references/vega-lite-visual.md](references/vega-lite-visual.md) for more details.
-2. Data Grids: These are used to display tabular data in a structured format, allowing for sorting, filtering, and pagination. See [references/data-grid-visual.md](references/data-grid-visual.md) for more details.
+2. Data Grids: These are used to display tabular data in a structured format, allowing for sorting, filtering, hierarchy, and pagination. In this repo, tables should be built with app-owned React components, currently using `@tanstack/react-table` as the headless engine. See [references/data-grid-visual.md](references/data-grid-visual.md) for more details.
 
 ## Packages & Imports
 
-The visual components are provided by three packages. **Always use these package imports when creating visuals.**
+The visual components are provided by these packages. **Always use these package imports when creating visuals.**
 
 | Package | Primary exports | Example import |
 |---|---|---|
 | `@microsoft/fabric-visuals` | `VegaVisual`, types: `VisualizationSpec`, `VegaLiteConfig`, `VegaVisualProps` | `import { VegaVisual } from "@microsoft/fabric-visuals"` |
-| `@microsoft/fabric-datagrid` | `DataGrid`, types: `GridColumnDef`, `Row`, `CellValue`, `DataGridProps`, `DataGridTheme`, `SortConfig` | `import { DataGrid } from "@microsoft/fabric-datagrid"` |
+| `@tanstack/react-table` | `useReactTable`, `getCoreRowModel`, `flexRender`, column/state types | `import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table"` |
 | `@microsoft/fabric-visuals-core` | `isDataTable`, `convertDataTableToRows`, design tokens | `import { isDataTable } from "@microsoft/fabric-visuals-core"` |
 
-The `DataTable` type (used by both components) is defined in `@microsoft/fabric-visuals-core` and re-exported by the visual packages' type definitions.
+The `DataTable` type is defined in `@microsoft/fabric-visuals-core` and should be used as the shared chart/table data contract before mapping into your table rows.
 
 ## Data Format
 The chart and data grid components share a unified `data` prop of type `DataTable` (from `@microsoft/fabric-visuals-core`). This structured format carries column metadata (`displayName`, `format`, `semanticType`) that the components use for axis titles, grid headers, number formatting, and tooltips.
@@ -37,7 +37,7 @@ The chart and data grid components share a unified `data` prop of type `DataTabl
 
 ```tsx
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
-import { DataGrid } from "@microsoft/fabric-datagrid";
+import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import type { DataTable } from "@microsoft/fabric-visuals-core";
 
 // useCssTheme() reads --color-* vars from the page and updates automatically
@@ -47,8 +47,12 @@ const theme = useCssTheme();
 // Charts — pass a DataTable and Vega-Lite spec
 <VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />
 
-// Grids — displayName becomes column headers, format applies to cells
-<DataGrid data={dataTable} theme={theme} />
+// Tables — map DataTable rows into your view model, then render with TanStack Table
+const table = useReactTable({
+  data: rows,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+})
 
 // Static/inline data — no data prop needed
 const inlineSpec = {
@@ -70,13 +74,13 @@ Always use the above mentioned ways to create visual when possible. If the user'
 
 ## Container Layout
 
-- **`DataGrid`** — the direct parent must apply `overflow-auto` so content remains scrollable when it exceeds the container bounds (many rows).
+- **App-owned tables** — the direct parent must apply `overflow-auto` so content remains scrollable when it exceeds the container bounds (many rows).
 
 ## Interactivity
 
-Both `VegaVisual` and `DataGrid` expose an `onInteraction` prop that emits structured, predicate-based events when the user clicks a data point or row.
+`VegaVisual` exposes an `onInteraction` prop for predicate-based chart interactions. App-owned tables should implement their own row click / selection callbacks when needed.
 
-**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to handle user interactions such as selections, cross-highlighting, and cross-filtering.
+**Always use the `onInteraction` prop** on `VegaVisual` for chart interactions. For tables, wire interaction explicitly in your component layer.
 
 ```tsx
 import type { InteractionEvent } from "@microsoft/fabric-visuals-core";
@@ -93,8 +97,6 @@ function handleInteraction(source: string, events: InteractionEvent[]) {
 
 <VegaVisual spec={spec} data={dataTable} theme={theme}
     onInteraction={(events) => handleInteraction("salesChart", events)} />
-<DataGrid data={dataTable} theme={theme}
-    onInteraction={(events) => handleInteraction("detailTable", events)} />
 ```
 **Key concepts**:
 - Clicking a different data point emits a new `select` (replaces the prior selection — no preceding `clear`).

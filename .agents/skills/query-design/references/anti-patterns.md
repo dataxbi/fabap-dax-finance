@@ -36,27 +36,15 @@ ORDER BY 'Region'[Name]
 ```
 
 ```typescript
-// ✅ TypeScript: derive total, render in DataGrid with cellRenderer
+// ✅ TypeScript: derive total, render in your table component with a cell renderer
 const detailTable = toDataTable(detail.data.table, columnMetadata);
 const revenueIdx = detailTable.columns.findIndex(c => c.name === "Revenue");
 const total = detailTable.rows.reduce((sum, row) => sum + (row[revenueIdx] as number), 0);
 
-const columns: GridColumnDef[] = detailTable.columns.map((col, i) => ({
-  id: col.name,
-  header: col.displayName ?? col.name,
-  cellRenderer: i === revenueIdx
-    ? (value, row) => row._id === "total"
-        ? <span className="font-semibold">{formatNumber(value as number, col.format)}</span>
-        : undefined
-    : undefined,
-}));
-
-const rows: Row[] = [
-  ...detailTable.rows.map((r, i) => toRow(r, detailTable.columns, `r${i}`)),
-  { _id: "total", [detailTable.columns[0].name]: "All Regions", Revenue: total },
+const rows = [
+  ...detailRows,
+  { id: "total", region: "All Regions", revenue: total, isTotal: true },
 ];
-
-<DataGrid columns={columns} data={rows} theme={theme} />
 ```
 
 For VegaVisual, pass detail + computed total as separate named datasets:
@@ -101,7 +89,7 @@ const detailTable = toDataTable(detail.data.table, detailMeta);
 const summaryTable = toDataTable(summary.data.table, summaryMeta);
 
 // VegaVisual: pass { detail: detailTable, summary: summaryTable }
-// DataGrid: append summary row with cellRenderer (same pattern as the derivable case)
+// Table component: append summary row with a custom cell renderer (same pattern as the derivable case)
 ```
 
 > **Rule of thumb:** If the total is a simple rollup of one column (SUM, COUNT, MIN, MAX), TypeScript can derive it from already-fetched detail rows. Anything else — DISTINCTCOUNT, AVERAGEX, ratios, or any non-trivial model measure — must be computed by DAX at the summary grain. When in doubt, use a separate DAX query: an extra round-trip is cheap; a wrong total is a silent data bug.
@@ -225,7 +213,7 @@ EVALUATE
   SUMMARIZECOLUMNS("Status", "✅ " & 'Order'[Status], "Count", COUNTROWS('Order'))
 ```
 
-**Fix:** Return raw data. Decorate via DataGrid `cellRenderer`.
+**Fix:** Return raw data. Decorate via a table cell renderer.
 
 ```dax
 // ✅ DAX: raw status values
@@ -234,19 +222,17 @@ ORDER BY 'Order'[Status]
 ```
 
 ```tsx
-// ✅ DataGrid: decorate via cellRenderer
-const columns: GridColumnDef[] = [
+// ✅ Table component: decorate via cell renderer
+const columns = [
   {
-    id: "OrderStatus",
+    accessorKey: "OrderStatus",
     header: "Status",
-    cellRenderer: (value) => (
-      <span>{value === "Complete" ? "✅" : "⏳"} {value as string}</span>
+    cell: ({ getValue }) => (
+      <span>{getValue() === "Complete" ? "✅" : "⏳"} {String(getValue())}</span>
     ),
   },
-  { id: "Count", header: "Count" },
+  { accessorKey: "Count", header: "Count" },
 ];
-
-<DataGrid columns={columns} data={dataTable} theme={theme} />
 ```
 
 ## Anti-Pattern 6: SELECTCOLUMNS for friendly names
@@ -311,22 +297,22 @@ ORDER BY 'Product'[Category], 'Calendar'[Year]
 ```
 
 ```tsx
-// ✅ DataGrid: cellRenderer handles null values
-const columns: GridColumnDef[] = [
-  { id: "ProductCategory", header: "Category" },
-  { id: "CalendarYear", header: "Year" },
+// ✅ Table component: cell renderer handles null values
+const columns = [
+  { accessorKey: "ProductCategory", header: "Category" },
+  { accessorKey: "CalendarYear", header: "Year" },
   {
-    id: "YoY Change",
+    accessorKey: "YoY Change",
     header: "YoY Change",
-    cellRenderer: (value) =>
-      value == null ? <span className="text-muted-foreground">—</span>
-                    : <span>{`${((value as number) * 100).toFixed(1)}%`}</span>,
+    cell: ({ getValue }) =>
+      getValue() == null ? <span className="text-muted-foreground">—</span>
+                         : <span>{`${((getValue() as number) * 100).toFixed(1)}%`}</span>,
   },
   {
-    id: "Sales",
+    accessorKey: "Sales",
     header: "Sales",
-    cellRenderer: (value) =>
-      value == null ? <span className="text-muted-foreground">N/A</span> : undefined,
+    cell: ({ getValue }) =>
+      getValue() == null ? <span className="text-muted-foreground">N/A</span> : getValue(),
   },
 ];
 ```

@@ -8,7 +8,7 @@ description: >
 
 # Query Design — Separation of Data and Presentation
 
-**DAX computes and fetches data. TypeScript shapes it for display. VegaVisual and DataGrid render it.**
+**DAX computes and fetches data. TypeScript shapes it for display. VegaVisual and app-owned table components render it.**
 
 Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll up client-side. Once at the visual's grain, TypeScript can derive simple totals (SUM, COUNT, MIN, MAX) from the already-fetched detail rows. When a visual layout changes, only the TypeScript or spec layer should change — not the DAX query.
 
@@ -29,8 +29,8 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 | Reshaping (pivot, unpivot) | TypeScript |
 | Column display names | `columnMetadata` in factory file |
 | Number/date formatting | `columnMetadata.format` / Vega-Lite spec |
-| User-facing sort order | TypeScript / Vega-Lite `sort` / DataGrid `sort` |
-| Decorative labels, icons | DataGrid `cellRenderer` or Vega-Lite condition |
+| User-facing sort order | TypeScript / Vega-Lite `sort` / table component sort state |
+| Decorative labels, icons | table cell renderers or Vega-Lite condition |
 | Axis titles, legends, color encoding | Vega-Lite spec |
 
 ## Rules
@@ -50,7 +50,7 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 - Raw typed values from DAX — format via `columnMetadata.format` or Vega-Lite, never `FORMAT()`
 - Model-defined format strings (from `INFO.VIEW.MEASURES()`) over invented ones
 - Multiple lightweight queries over one monolithic query
-- User-facing sort in TypeScript / Vega-Lite / DataGrid — never re-query for sort
+- User-facing sort in TypeScript / Vega-Lite / table component state — never re-query for sort
 
 ### Avoid
 
@@ -72,16 +72,16 @@ Need to add something to the query result?
   |     -> High-cardinality: push filter to DAX, re-query
   |-- Merging datasets or adding synthetic rows?
   |     -> Charts: pass multiple DataTables to VegaVisual, layer in spec
-  |     -> Grids: append rows in TypeScript, style via cellRenderer
+  |     -> Grids: append rows in TypeScript, style via table cell renderers
   |-- Renaming a column for display?
   |     -> columnMetadata in the factory file (displayName)
   |-- Formatting, labeling, or encoding?
-  |     -> Vega-Lite spec or DataGrid cellRenderer
+  |     -> Vega-Lite spec or table cell renderer
   |-- Decorating values (icons, status badges, null placeholders)?
-  |     -> DataGrid cellRenderer or Vega-Lite condition encoding
+  |     -> table cell renderer or Vega-Lite condition encoding
   |-- Not sure?
         -> Does it change what the data *means* (filter, measure, grain)? -> DAX
-           Does it change only how data is *rendered* (labels, icons, layout)? -> TypeScript / Vega-Lite spec / DataGrid cellRenderer
+           Does it change only how data is *rendered* (labels, icons, layout)? -> TypeScript / Vega-Lite spec / table cell renderer
            Still unclear? -> Read the relevant reference above
 ```
 
@@ -98,4 +98,4 @@ Read these when working on a specific topic:
 
 - **[schema-discovery](../schema-discovery/SKILL.md)** — Schema exploration; discover tables, columns, and relationships before writing queries.
 - **[dax-authoring](../dax-authoring/SKILL.md)** — DAX syntax, query patterns, and testing workflow. Apply this skill's principles when deciding what DAX should compute.
-- **[visuals](../visuals/SKILL.md)** — Vega-Lite specs and DataGrid configuration. Push formatting and labels into specs, not DAX.
+- **[visuals](../visuals/SKILL.md)** — Vega-Lite specs and app-owned table configuration. Push formatting and labels into specs or table renderers, not DAX.

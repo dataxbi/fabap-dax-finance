@@ -7,7 +7,7 @@ When a component needs data at multiple grains (e.g., region detail + grand tota
 - [File Organization](#file-organization) — `.dax` + `.ts` layout per visualization
 - [Component Wiring](#component-wiring) — two hook calls → two `DataTable`s
 - [Rendering in VegaVisual (multi-DataTable)](#rendering-in-vegavisual-multi-datatable) — pass named datasets, layer in spec
-- [Rendering in DataGrid (total row via cellRenderer)](#rendering-in-datagrid-total-row-via-cellrenderer) — styled grand total row
+- [Rendering in App-Owned Tables (total row via cell renderer)](#rendering-in-app-owned-tables-total-row-via-cell-renderer) — styled grand total row
 - [Consistency Rule](#consistency-rule) — shared filters, measures, scope across split-grain queries
 
 ## File Organization
@@ -76,34 +76,32 @@ The Vega-Lite spec (in the `.json` file) layers the two datasets:
 
 This pattern works for: reference lines (average, target), cross-highlighting between datasets, annotations on top of detail data.
 
-## Rendering in DataGrid (total row via cellRenderer)
+## Rendering in App-Owned Tables (total row via cell renderer)
 
-Append the summary as a styled total row using `cellRenderer` to visually distinguish it:
+Append the summary as a styled total row using your table cell renderer to visually distinguish it:
 
 ```tsx
 const grandTotal = summaryTable.rows[0];
-const totalRow: Row = {
-  _id: "grand-total",
-  [detailTable.columns[0].name]: "Grand Total",
-  ...Object.fromEntries(
-    detailTable.columns.slice(1).map((col, i) => [col.name, grandTotal[i + 1]])
-  ),
-};
+const rows = [
+  ...detailRows,
+  { id: "grand-total", region: "Grand Total", revenue: grandTotal[1], isTotal: true },
+];
 
-const columns: GridColumnDef[] = detailTable.columns.map(col => ({
-  id: col.name,
-  header: col.displayName ?? col.name,
-  cellRenderer: (value, row) =>
-    row._id === "grand-total"
-      ? <span className="font-semibold">{formatValue(value, col.format)}</span>
-      : undefined, // fall back to default formatting
-}));
-
-<DataGrid
-  columns={columns}
-  data={[...detailTable.rows.map(toRow), totalRow]}
-  theme={theme}
-/>
+const columns = [
+  {
+    accessorKey: "region",
+    header: "Region",
+    cell: ({ row, getValue }) =>
+      row.original.isTotal ? <span className="font-semibold">{String(getValue())}</span> : String(getValue()),
+  },
+  {
+    accessorKey: "revenue",
+    header: "Revenue",
+    cell: ({ row, getValue }) =>
+      row.original.isTotal ? <span className="font-semibold">{formatValue(getValue(), "$#,##0.00")}</span>
+                           : formatValue(getValue(), "$#,##0.00"),
+  },
+];
 ```
 
 ## Consistency Rule

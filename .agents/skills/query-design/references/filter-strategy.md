@@ -33,7 +33,7 @@ const filteredTable: DataTable = {
   rows: dataTable.rows.filter(row => row[regionIdx] === selectedRegion),
 };
 
-// Pass the filtered DataTable directly to VegaVisual or DataGrid
+// Pass the filtered DataTable directly to VegaVisual or map it into your table rows
 <VegaVisual spec={vegaLiteSpec} data={filteredTable} theme={theme} />
 ```
 

@@ -1,10 +1,9 @@
 # DataTable — Shared `data` Prop
 
-Both `VegaVisual` and `DataGrid` accept an optional `data` prop of type `DataTable`. This is a row-major tabular JSON format.
+`VegaVisual` accepts an optional `data` prop of type `DataTable`. In this repo, app-owned tables can also use `DataTable` as an intermediate tabular format before mapping rows into their local view model.
 
 ```tsx
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
-import { DataGrid } from "@microsoft/fabric-datagrid";
 import { isDataTable } from "@microsoft/fabric-visuals-core";
 
 const theme = useCssTheme();
@@ -22,7 +21,6 @@ const data = {
 };
 
 <VegaVisual spec={spec} data={data} theme={theme} />
-<DataGrid columns={gridColumns} data={data} theme={theme} />
 ```
 
 ## Props
@@ -35,9 +33,9 @@ Refer to the package README.md for detailed information about the component api 
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "data-table.schema.json",
-    "$comment": "JSON Schema for the DataTable interface defined in types.ts. Enforces the row-major tabular format shared between VegaVisual and DataGrid.",
+    "$comment": "JSON Schema for the DataTable interface defined in types.ts. Enforces the row-major tabular format shared between VegaVisual and app-owned table adapters.",
     "title": "DataTable",
-    "description": "Structured tabular data input shared between VegaVisual and DataGrid. This is a JSON format, not an Arrow format. If Arrow format is used, it is the consumer's responsibility to convert it to this format.",
+    "description": "Structured tabular data input shared between VegaVisual and app-owned table adapters. This is a JSON format, not an Arrow format. If Arrow format is used, it is the consumer's responsibility to convert it to this format.",
     "type": "object",
     "required": [
         "columns",
@@ -87,7 +85,7 @@ Refer to the package README.md for detailed information about the component api 
                 },
                 "format": {
                     "$comment": "A VBA/ECMA-376 format string (e.g., `#,##0.00`, `0.00%`, and `mm/dd/yyyy`).  May be converted to another representation (e.g., D3.js format string) by leaf components as needed.",
-                    "description": "A VBA/ECMA-376 format string for formatting data for output, e.g., in tooltips, data labels, DataGrid table cells.",
+                    "description": "A VBA/ECMA-376 format string for formatting data for output, e.g., in tooltips, data labels, or app-owned table cells.",
                     "type": "string"
                 }
             }

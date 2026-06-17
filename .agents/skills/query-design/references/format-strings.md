@@ -26,7 +26,7 @@ export const columnMetadata: ColumnMetadataMap = {
 };
 ```
 
-VegaVisual and DataGrid each handle their own VBA→d3 conversion internally at ingestion time, so authors only ever work in VBA format.
+VegaVisual handles VBA→d3 conversion internally at ingestion time. App-owned tables should read the same VBA/ECMA-376 format strings from `columnMetadata.format` and format cell values explicitly in their renderers.
 
 ## Dynamic Format Strings
 

@@ -1,29 +1,34 @@
-# DataGrid
+# App-Owned Data Grid
 
-A React component from the `@microsoft/fabric-datagrid` package for rendering data-grid / table visuals.
+In this repo, table visuals should be implemented with app-owned React components. Use `@tanstack/react-table` as the headless engine and render the DOM, styling, menus, and interactions yourself.
 
-### Props
+### Table Architecture
 
-Refer to the package README.md for detailed information about the component api including exported types, functions, and properties.
+- Use `DataTable` or a mapped row model as the input contract.
+- Convert query results into row objects in `src/lib/` helpers.
+- Define columns in the component or a local table config module.
+- Render headers, filters, menus, and cells explicitly in JSX.
 
 ### Theming
 
-Pass the `theme` prop to render correctly in both light and dark modes. Use the `useCssTheme()` hook from `@microsoft/fabric-visuals` — it derives the theme from `--color-*` CSS variables on the page and updates automatically when the theme changes:
+Use the app tokens in `src/global.css` for light/dark support. Unlike the old `DataGrid`, TanStack Table does not take a `theme` prop; you style the table directly with Tailwind classes and CSS variables.
 
 ```tsx
-import { useCssTheme } from "@microsoft/fabric-visuals";
+import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 
-const theme = useCssTheme();
-
-<DataGrid data={dataTable} theme={theme} />
+const table = useReactTable({
+  data: rows,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+})
 ```
 
 ### Custom Cell Rendering
 
 **Key behaviors:**
-- When `cellRenderer` is set, the column's `format` string is **not** applied — the renderer receives the raw value and is responsible for its own formatting.
-- The built-in tooltip-on-truncation is disabled for custom-rendered cells — the renderer should provide its own tooltip if needed.
-- Every `GridColumnDef.id` must correspond to a column in the `DataTable`.
+- TanStack cell renderers receive row and column context, so formatting is fully explicit.
+- Tooltips, truncation, sticky columns, and expanded rows are app responsibilities.
+- Column IDs should stay stable so sorting/filter/visibility state remains predictable.
 
 #### Examples
 
@@ -33,7 +38,8 @@ const theme = useCssTheme();
 {
   id: "revenue",
   header: "Revenue",
-  cellRenderer: (value) => {
+  cell: ({ getValue }) => {
+    const value = getValue();
     const maxValue = 100000; // set to the column's known maximum
     const num = typeof value === "number" ? value : 0;
     const pct = Math.min((num / maxValue) * 100, 100);
@@ -58,9 +64,9 @@ const theme = useCssTheme();
 {
   id: "name",
   header: "Employee",
-  cellRenderer: (value, row) => {
-    const name = String(value ?? "");
-    const role = String(row["role"] ?? "");
+  cell: ({ row, getValue }) => {
+    const name = String(getValue() ?? "");
+    const role = String(row.original.role ?? "");
     return (
       <div className="flex flex-col leading-tight">
         <span className="font-medium">{name}</span>
@@ -79,7 +85,8 @@ import { Check, X } from "lucide-react";
 {
   id: "verified",
   header: "Verified",
-  cellRenderer: (value) =>
+  cell: ({ getValue }) =>
+    getValue() ? 
     value ? <Check className="icon-size-200 text-green-600" /> : <X className="icon-size-200 text-red-500" />,
 }
 ```
@@ -90,8 +97,8 @@ import { Check, X } from "lucide-react";
 {
   id: "website",
   header: "Website",
-  cellRenderer: (value) => {
-    const href = typeof value === "string" ? value : "";
+  cell: ({ getValue }) => {
+    const href = typeof getValue() === "string" ? getValue() : "";
     return href ? (
       <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-foreground underline">
         {href}
@@ -101,36 +108,32 @@ import { Check, X } from "lucide-react";
 }
 ```
 
-**Image cell** — use when the column value is a URL pointing to an image meant for visual display (e.g. a photo, avatar, or product image). Renders a thumbnail; clicking opens a lightbox overlay. Use `ImageCell` from `@microsoft/fabric-datagrid`:
+**Image cell** — use when the column value is a URL pointing to an image meant for visual display (e.g. a photo, avatar, or product image). Render your own thumbnail and optional lightbox:
 
 ```tsx
-import { ImageCell } from "@microsoft/fabric-datagrid";
-
 {
   id: "photo",
   header: "Photo",
-  cellRenderer: (value) => {
-    const src = typeof value === "string" ? value : "";
-    return src ? <ImageCell src={src} alt="Photo" /> : null;
+  cell: ({ getValue }) => {
+    const src = typeof getValue() === "string" ? getValue() : "";
+    return src ? <img src={src} alt="Photo" className="h-10 w-10 rounded-md object-cover" /> : null;
   },
 }
 ```
 
-**Cell tooltip** — use `CellTooltip` when a `cellRenderer` needs a tooltip:
+**Cell tooltip** — wrap the rendered content in your own tooltip/popup component when needed:
 
 ```tsx
-import { CellTooltip } from "@microsoft/fabric-datagrid";
-
 {
   id: "name",
   header: "Name",
-  cellRenderer: (value, row) => {
-    const name = String(value ?? "");
-    const detail = String(row["email"] ?? "");
+  cell: ({ row, getValue }) => {
+    const name = String(getValue() ?? "");
+    const detail = String(row.original.email ?? "");
     return (
-      <CellTooltip content={<div className="rounded-xl border bg-popover p-l shadow-lg"><p>{name}</p><p>{detail}</p></div>}>
+      <div title={`${name} · ${detail}`}>
         <span>{name}</span>
-      </CellTooltip>
+      </div>
     );
   },
 }

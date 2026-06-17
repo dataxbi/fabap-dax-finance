@@ -23,7 +23,7 @@ See the `formatting.md` reference for the full list of CSS variables and how to 
 
 ### Custom theme colors
 
-The `theme` prop on `VegaVisual` and `DataGrid` controls axis colors, text fills, grid lines, and background. Use the `useCssTheme()` hook to derive it from the `--color-*` variables in `global.css` — the hook updates automatically when the theme changes (e.g. dark-mode toggle adds/removes the `.dark` class):
+The `theme` prop on `VegaVisual` controls axis colors, text fills, grid lines, and background. App-owned tables should use the same `--color-*` variables from `global.css` directly in their Tailwind/CSS styling:
 
 ```tsx
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
@@ -75,7 +75,7 @@ If a chart appears squished, trace the height chain upward — typically a missi
 
 Apply `overflow-visible` on both the VegaVisual parent and the card wrapper so axis titles, legends, and labels are not clipped. Do not wrap `<VegaVisual>` in a fixed-height container.
 
-The direct parent of `<DataGrid>` should use `overflow-auto flex-1 min-h-0` for row scrolling.
+The direct parent of a scrollable table should use `overflow-auto flex-1 min-h-0` for row scrolling.
 
 ### `minHeight` vs `height` for chart containers
 
@@ -171,19 +171,16 @@ A single `cornerRadiusEnd` rounds corners on the wrong side for negative values.
 
 ---
 
-## DataGrid
+## App-Owned Tables
 
-Pass theme colors to the DataGrid via the `theme` prop. Use `useCssTheme()` to bridge `--color-*` variables in `global.css` to the JS theme object:
+Use the same semantic tokens from `global.css` for your table header, rows, borders, chips, hover states, and sticky columns:
 
 ```tsx
-import { useCssTheme } from "@microsoft/fabric-visuals";
-
-const theme = useCssTheme();
-
-<DataGrid
-  data={dataTable}
-  theme={theme}
-/>
+<div className="overflow-auto rounded-xl border border-border bg-card">
+  <table className="min-w-full">
+    ...
+  </table>
+</div>
 ```
 
 Font, spacing, and border styles are controlled by CSS variables in `global.css` and cascade automatically.
