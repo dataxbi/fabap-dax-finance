@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { QueryTable } from "@microsoft/fabric-app-data";
-import { cleanColumnName, toAgGridData } from "@/lib/ag-grid-data";
+import { cleanColumnName, queryTableToRows } from "@/lib/query-table-rows";
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
 
-describe("ag-grid data conversion", () => {
+describe("query-table-rows", () => {
     const queryTable: QueryTable = {
         columns: [
             { name: "Cuenta[Nombre]", dataType: "string" },
@@ -15,24 +15,20 @@ describe("ag-grid data conversion", () => {
         ],
     };
 
-    it("cleans DAX column names into grid field names", () => {
+    it("cleans DAX column names into object field names", () => {
         expect(cleanColumnName("Cuenta[Nombre]")).toBe("CuentaNombre");
         expect(cleanColumnName("[Importe]")).toBe("Importe");
     });
 
-    it("converts query rows into object row data using metadata names", () => {
+    it("converts query rows into objects using metadata names", () => {
         const metadata: ColumnMetadataMap = {
             "Cuenta[Nombre]": { name: "CuentaNombre", displayName: "Cuenta" },
             "[Importe]": { name: "Importe", displayName: "Importe", format: "#,##0" },
         };
 
-        const result = toAgGridData(queryTable, metadata);
+        const result = queryTableToRows(queryTable, metadata);
 
-        expect(result.columnDefs).toMatchObject([
-            { field: "CuentaNombre", headerName: "Cuenta" },
-            { field: "Importe", headerName: "Importe", type: "numericColumn" },
-        ]);
-        expect(result.rowData).toEqual([
+        expect(result).toEqual([
             { CuentaNombre: "Ingresos", Importe: 1250 },
             { CuentaNombre: "Gastos", Importe: -250 },
         ]);

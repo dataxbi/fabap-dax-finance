@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import "ag-grid-community/styles/ag-grid.css";
-@import "ag-grid-community/styles/ag-theme-quartz.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -176,114 +174,6 @@
     font-family: inherit;
   }
 
-  .ag-theme-quartz,
-  .ag-theme-quartz-dark {
-    --ag-font-family: var(--font-base);
-    --ag-font-size: var(--text-300);
-    --ag-background-color: var(--color-card);
-    --ag-foreground-color: var(--color-card-foreground);
-    --ag-header-background-color: var(--color-secondary);
-    --ag-header-foreground-color: var(--color-secondary-foreground);
-    --ag-border-color: var(--color-border);
-    --ag-row-hover-color: var(--color-hover);
-    --ag-selected-row-background-color: var(--color-accent);
-    --ag-wrapper-border-radius: var(--radius-xl);
-    --ag-cell-horizontal-padding: var(--spacing-m);
-    --ag-odd-row-background-color: transparent;
-  }
-
-  .ag-theme-quartz .ag-root-wrapper,
-  .ag-theme-quartz-dark .ag-root-wrapper {
-    border-color: var(--color-border);
-  }
-
-  .ag-theme-quartz .pl-grid-positive,
-  .ag-theme-quartz-dark .pl-grid-positive {
-    color: #107c41;
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .ag-theme-quartz .pl-grid-negative,
-  .ag-theme-quartz-dark .pl-grid-negative {
-    color: #c50f1f;
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .ag-theme-quartz .pl-grid-neutral,
-  .ag-theme-quartz-dark .pl-grid-neutral {
-    color: var(--color-muted-foreground);
-  }
-
-  .ag-theme-quartz .pl-grid-highlight-row,
-  .ag-theme-quartz-dark .pl-grid-highlight-row {
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .ag-theme-quartz .pl-grid-parent-row,
-  .ag-theme-quartz-dark .pl-grid-parent-row {
-    background: color-mix(in srgb, var(--color-secondary) 45%, transparent);
-  }
-
-  .ag-theme-quartz .ag-row-pinned,
-  .ag-theme-quartz-dark .ag-row-pinned {
-    background-color: var(--color-accent);
-    color: var(--color-accent-foreground);
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .ag-theme-quartz .pl-grid-indicator,
-  .ag-theme-quartz-dark .pl-grid-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .ag-theme-quartz .pl-grid-indicator-icon,
-  .ag-theme-quartz-dark .pl-grid-indicator-icon {
-    display: inline-flex;
-    width: 1ch;
-    justify-content: center;
-    font-size: var(--text-200);
-  }
-
-  .ag-theme-quartz .pl-grid-pill,
-  .ag-theme-quartz-dark .pl-grid-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-full);
-    padding: var(--spacing-xxs) var(--spacing-s);
-    font-size: var(--text-200);
-    line-height: var(--leading-200);
-    font-weight: var(--font-weight-semibold);
-    white-space: nowrap;
-  }
-
-  .ag-theme-quartz .pl-grid-pill-positive,
-  .ag-theme-quartz .pl-grid-indicator-positive,
-  .ag-theme-quartz-dark .pl-grid-pill-positive,
-  .ag-theme-quartz-dark .pl-grid-indicator-positive {
-    background: rgba(16, 124, 65, 0.12);
-    color: #107c41;
-  }
-
-  .ag-theme-quartz .pl-grid-pill-negative,
-  .ag-theme-quartz .pl-grid-indicator-negative,
-  .ag-theme-quartz-dark .pl-grid-pill-negative,
-  .ag-theme-quartz-dark .pl-grid-indicator-negative {
-    background: rgba(197, 15, 31, 0.1);
-    color: #c50f1f;
-  }
-
-  .ag-theme-quartz .pl-grid-pill-neutral,
-  .ag-theme-quartz .pl-grid-indicator-neutral,
-  .ag-theme-quartz-dark .pl-grid-pill-neutral,
-  .ag-theme-quartz-dark .pl-grid-indicator-neutral {
-    background: color-mix(in srgb, var(--color-muted) 92%, transparent);
-    color: var(--color-muted-foreground);
-  }
-
   .pl-ui-chip-positive {
     background: rgba(16, 124, 65, 0.12);
     color: #107c41;
@@ -307,7 +197,8 @@
     white-space: nowrap;
   }
 
-  .pl-finance-table tbody tr {
+  .pl-finance-table tbody tr,
+  .pl-finance-table tbody td {
     transition: background-color 120ms ease;
   }
 

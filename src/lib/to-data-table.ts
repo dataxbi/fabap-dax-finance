@@ -42,7 +42,7 @@ export type ColumnMetadataMap = Record<string, ColumnMetadata>;
  *
  * if (data?.status === "success") {
  *   const dataTable = toDataTable(data.table, columnMetadata);
- *   return <AgGridReact rowData={...} columnDefs={...} />;
+ *   return <MyTable data={dataTable} />;
  * }
  * ```
  */

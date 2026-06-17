@@ -9,11 +9,8 @@ import { createRoot } from 'react-dom/client';
 
 import { Root } from './Root';
 import { bootstrapAuth } from './services/rayfin-auth.service';
-import { registerAgCommunityModules } from './lib/ag-community-modules';
 
 import "./global.css"
-
-registerAgCommunityModules();
 
 const rayfinAuthService = bootstrapAuth();
 

@@ -1,44 +1,86 @@
 import {
-    AlertTriangle,
     ArrowDownCircle,
+    ArrowDownWideNarrow,
     ArrowUpCircle,
+    ArrowUpNarrowWide,
     BarChart3,
+    ChevronDown,
+    ChevronRight,
     Coins,
     Database,
-    Landmark,
+    Ellipsis,
+    Filter,
     RefreshCw,
     Table2,
     Wallet,
+    X,
 } from "lucide-react";
-import { AgCharts } from "ag-charts-react";
-import type { AgChartOptions } from "ag-charts-community";
-import { AllEnterpriseModule } from "ag-grid-enterprise";
 import {
-    type ColDef,
-    type CustomCellRendererProps,
-    type ValueFormatterParams,
-} from "ag-grid-community";
-import { AgGridProvider, AgGridReact } from "ag-grid-react";
-import { useMemo } from "react";
+    flexRender,
+    getCoreRowModel,
+    getExpandedRowModel,
+    getFilteredRowModel,
+    getSortedRowModel,
+    useReactTable,
+    type Column,
+    type ColumnDef,
+    type ColumnFiltersState,
+    type ColumnPinningState,
+    type ExpandedState,
+    type FilterFn,
+    type Row,
+    type SortingState,
+    type VisibilityState,
+} from "@tanstack/react-table";
+import { useMemo, useState } from "react";
 import { StatusCard } from "@/components/pl/status-card";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
-import { registerAgCommunityModules } from "@/lib/ag-community-modules";
 import { formatCurrencyEs, formatPercentEs } from "@/lib/format";
-import { toAgGridData, type GridRow } from "@/lib/ag-grid-data";
+import { queryTableToRows, type GridRow } from "@/lib/query-table-rows";
 import {
     buildPlHierarchy,
-    flattenHierarchyToTreeRows,
     getVarianceLabel,
     getVarianceTone,
+    mapHierarchyToTreeRows,
     type PlGridRow,
     type PlTreeRow,
 } from "@/lib/pl-grid";
-import { toDataTable } from "@/lib/to-data-table";
-import { monthTrend, plTable, yearSummary } from "@/queries/pl";
+import { cn } from "@/lib/utils";
+import { yearSummary, plTable } from "@/queries/pl";
 
-registerAgCommunityModules();
+interface NumericFilterValue {
+    operator: "gte" | "lte" | "eq";
+    value: string;
+}
 
-const isTest = import.meta.env.MODE === "test";
+interface PlColumnMeta {
+    align?: "left" | "right";
+    filterType?: "text" | "number";
+}
+
+const initialExpanded: ExpandedState = {
+    "summary-root": true,
+};
+
+const accountFilter: FilterFn<PlTreeRow> = (row, columnId, filterValue) => {
+    const search = String(filterValue ?? "").trim().toLowerCase();
+    if (!search) return true;
+    return String(row.getValue(columnId) ?? "").toLowerCase().includes(search);
+};
+
+const numericFilter: FilterFn<PlTreeRow> = (row, columnId, filterValue) => {
+    const nextFilter = filterValue as NumericFilterValue | undefined;
+    if (!nextFilter?.value) return true;
+
+    const candidate = toNumber(row.getValue(columnId));
+    const reference = toNumber(nextFilter.value);
+
+    if (candidate == null || reference == null) return false;
+
+    if (nextFilter.operator === "lte") return candidate <= reference;
+    if (nextFilter.operator === "eq") return candidate === reference;
+    return candidate >= reference;
+};
 
 function LoadingBlock({ label }: { label: string }) {
     return (
@@ -55,7 +97,7 @@ function ErrorBlock({ message }: { message: string }) {
     return (
         <div className="rounded-xl border border-destructive/35 bg-destructive/5 p-l">
             <div className="flex items-start gap-m">
-                <AlertTriangle className="mt-xxs icon-size-400 shrink-0 text-destructive" />
+                <X className="mt-xxs icon-size-400 shrink-0 text-destructive" />
                 <div>
                     <p className="text-300 leading-300 font-semibold text-card-foreground">
                         No se pudieron cargar los datos
@@ -76,7 +118,12 @@ function dataError(data: ReturnType<typeof useSemanticModelQuery>["data"]) {
 }
 
 function toNumber(value: unknown) {
-    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
 }
 
 function toComparisonTone(delta: number, sign: number) {
@@ -86,8 +133,8 @@ function toComparisonTone(delta: number, sign: number) {
 }
 
 function signedPercentFromDelta(delta: unknown, pct: unknown) {
-    const deltaNumber = typeof delta === "number" && Number.isFinite(delta) ? delta : 0;
-    const pctNumber = typeof pct === "number" && Number.isFinite(pct) ? pct : 0;
+    const deltaNumber = toNumber(delta) ?? 0;
+    const pctNumber = toNumber(pct) ?? 0;
     const pctMagnitude = Math.abs(pctNumber);
 
     if (Math.abs(deltaNumber) < 0.5 || pctMagnitude === 0) {
@@ -111,21 +158,52 @@ function nodeIconForType(type: PlTreeRow["nodeType"]) {
     return <span className="pl-grid-leaf-dot" aria-hidden="true" />;
 }
 
-function AutoGroupCell(params: CustomCellRendererProps<PlTreeRow>) {
-    const type = params.data?.nodeType ?? "leaf";
-    const label = String(params.valueFormatted ?? params.value ?? "");
+function rowSurfaceClass(nodeType: PlTreeRow["nodeType"]) {
+    return nodeType === "leaf" ? "bg-card" : "bg-secondary/55";
+}
+
+function sortIndicator(column: Column<PlTreeRow>) {
+    const sort = column.getIsSorted();
+
+    if (sort === "asc") return <ArrowUpNarrowWide className="icon-size-200 text-primary" />;
+    if (sort === "desc") return <ArrowDownWideNarrow className="icon-size-200 text-primary" />;
+    return null;
+}
+
+function AccountCell({ row }: { row: Row<PlTreeRow> }) {
+    const original = row.original;
+    const canExpand = row.getCanExpand();
+    const isExpanded = row.getIsExpanded();
 
     return (
-        <div className="flex items-center gap-s">
-            <span className="shrink-0">{nodeIconForType(type)}</span>
-            <span
-                className={
-                    type === "summary" || type === "income" || type === "expense" || type === "metric"
-                        ? "font-semibold"
-                        : ""
-                }
+        <div
+            className="flex items-center gap-s"
+            style={{ paddingLeft: `calc(${row.depth} * var(--spacing-l))` }}
+        >
+            <button
+                type="button"
+                onClick={canExpand ? row.getToggleExpandedHandler() : undefined}
+                disabled={!canExpand}
+                aria-label={canExpand ? (isExpanded ? "Contraer fila" : "Expandir fila") : "Fila sin hijos"}
+                className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+                    canExpand && "hover:border-border hover:bg-muted hover:text-foreground",
+                    !canExpand && "cursor-default",
+                )}
             >
-                {label}
+                {canExpand ? (
+                    isExpanded ? (
+                        <ChevronDown className="icon-size-200" />
+                    ) : (
+                        <ChevronRight className="icon-size-200" />
+                    )
+                ) : (
+                    <span className="h-4 w-4" aria-hidden="true" />
+                )}
+            </button>
+            <span className="shrink-0">{nodeIconForType(original.nodeType)}</span>
+            <span className={cn(original.nodeType !== "leaf" && "font-semibold")}>
+                {String(row.getValue("account") ?? "")}
             </span>
         </div>
     );
@@ -133,15 +211,13 @@ function AutoGroupCell(params: CustomCellRendererProps<PlTreeRow>) {
 
 function DeltaCell({
     value,
-    data,
+    pctValue,
     tone,
-    pctField,
-}: CustomCellRendererProps<PlTreeRow> & {
+}: {
+    value: unknown;
+    pctValue: unknown;
     tone: "positive" | "negative" | "neutral";
-    pctField: "VariacionPct" | "VariacionAAPct";
 }) {
-    if (!data) return null;
-    const pctValue = signedPercentFromDelta(value, data[pctField]);
     const indicator = tone === "positive" ? "▲" : tone === "negative" ? "▼" : "•";
 
     return (
@@ -153,13 +229,12 @@ function DeltaCell({
                 <span>{formatCurrencyEs(value)}</span>
             </span>
             <span
-                className={`rounded-full px-s py-xxs text-200 leading-200 font-semibold ${
-                    tone === "positive"
-                        ? "pl-ui-chip-positive"
-                        : tone === "negative"
-                          ? "pl-ui-chip-negative"
-                          : "pl-ui-chip-neutral"
-                }`}
+                className={cn(
+                    "rounded-full px-s py-xxs text-200 leading-200 font-semibold",
+                    tone === "positive" && "pl-ui-chip-positive",
+                    tone === "negative" && "pl-ui-chip-negative",
+                    tone === "neutral" && "pl-ui-chip-neutral",
+                )}
             >
                 {formatPercentEs(pctValue)}
             </span>
@@ -167,10 +242,241 @@ function DeltaCell({
     );
 }
 
+function ColumnHeaderButton({
+    active,
+    label,
+    onClick,
+    children,
+}: {
+    active?: boolean;
+    label: string;
+    onClick: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            onClick={onClick}
+            className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground",
+                active && "border-border bg-card text-primary",
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
+function TextFilterPanel({
+    column,
+    onClose,
+}: {
+    column: Column<PlTreeRow>;
+    onClose: () => void;
+}) {
+    return (
+        <div className="absolute right-0 top-full z-20 mt-xs w-64 rounded-xl border border-border bg-popover p-m shadow-lg">
+            <div className="mb-s flex items-center justify-between gap-s">
+                <p className="text-200 leading-200 font-semibold text-popover-foreground">Filtrar cuenta</p>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md p-xxs text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Cerrar filtro"
+                >
+                    <X className="icon-size-200" />
+                </button>
+            </div>
+            <input
+                autoFocus
+                value={String(column.getFilterValue() ?? "")}
+                onChange={(event) => column.setFilterValue(event.target.value)}
+                placeholder="Buscar cuenta"
+                className="w-full rounded-lg border border-input bg-background px-m py-s text-300 leading-300 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <div className="mt-m flex justify-end">
+                <button
+                    type="button"
+                    onClick={() => {
+                        column.setFilterValue(undefined);
+                        onClose();
+                    }}
+                    className="rounded-lg border border-border px-m py-s text-200 leading-200 font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                    Limpiar
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function NumericFilterPanel({
+    column,
+    onClose,
+}: {
+    column: Column<PlTreeRow>;
+    onClose: () => void;
+}) {
+    const filter = (column.getFilterValue() as NumericFilterValue | undefined) ?? {
+        operator: "gte" as const,
+        value: "",
+    };
+
+    return (
+        <div className="absolute right-0 top-full z-20 mt-xs w-72 rounded-xl border border-border bg-popover p-m shadow-lg">
+            <div className="mb-s flex items-center justify-between gap-s">
+                <p className="text-200 leading-200 font-semibold text-popover-foreground">Filtrar valores</p>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md p-xxs text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Cerrar filtro"
+                >
+                    <X className="icon-size-200" />
+                </button>
+            </div>
+            <div className="grid gap-s sm:grid-cols-[120px_minmax(0,1fr)]">
+                <select
+                    value={filter.operator}
+                    onChange={(event) =>
+                        column.setFilterValue({
+                            operator: event.target.value as NumericFilterValue["operator"],
+                            value: filter.value,
+                        })
+                    }
+                    className="rounded-lg border border-input bg-background px-m py-s text-300 leading-300 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                    <option value="gte">Mayor o igual</option>
+                    <option value="lte">Menor o igual</option>
+                    <option value="eq">Igual a</option>
+                </select>
+                <input
+                    autoFocus
+                    inputMode="decimal"
+                    value={filter.value}
+                    onChange={(event) =>
+                        column.setFilterValue({
+                            operator: filter.operator,
+                            value: event.target.value,
+                        })
+                    }
+                    placeholder="Escribe un importe"
+                    className="w-full rounded-lg border border-input bg-background px-m py-s text-300 leading-300 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+            </div>
+            <div className="mt-m flex justify-end">
+                <button
+                    type="button"
+                    onClick={() => {
+                        column.setFilterValue(undefined);
+                        onClose();
+                    }}
+                    className="rounded-lg border border-border px-m py-s text-200 leading-200 font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                    Limpiar
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function ColumnMenuPanel({
+    column,
+    columns,
+    onClose,
+}: {
+    column: Column<PlTreeRow>;
+    columns: Column<PlTreeRow>[];
+    onClose: () => void;
+}) {
+    return (
+        <div className="absolute right-0 top-full z-20 mt-xs w-72 rounded-xl border border-border bg-popover p-m shadow-lg">
+            <div className="mb-s flex items-center justify-between gap-s">
+                <p className="text-200 leading-200 font-semibold text-popover-foreground">Opciones de columna</p>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md p-xxs text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Cerrar menu"
+                >
+                    <X className="icon-size-200" />
+                </button>
+            </div>
+
+            <div className="space-y-xs border-b border-border pb-m">
+                <button
+                    type="button"
+                    onClick={() => {
+                        column.toggleSorting(false);
+                        onClose();
+                    }}
+                    className="flex w-full items-center gap-s rounded-lg px-m py-s text-left text-200 leading-200 text-popover-foreground hover:bg-muted"
+                >
+                    <ArrowUpNarrowWide className="icon-size-200" />
+                    Orden ascendente
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        column.toggleSorting(true);
+                        onClose();
+                    }}
+                    className="flex w-full items-center gap-s rounded-lg px-m py-s text-left text-200 leading-200 text-popover-foreground hover:bg-muted"
+                >
+                    <ArrowDownWideNarrow className="icon-size-200" />
+                    Orden descendente
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        column.clearSorting();
+                        onClose();
+                    }}
+                    className="flex w-full items-center gap-s rounded-lg px-m py-s text-left text-200 leading-200 text-popover-foreground hover:bg-muted"
+                >
+                    <X className="icon-size-200" />
+                    Limpiar ordenación
+                </button>
+            </div>
+
+            <div className="mt-m space-y-xs">
+                <p className="px-m text-200 leading-200 font-semibold text-muted-foreground">Columnas visibles</p>
+                {columns
+                    .filter((item) => item.getCanHide())
+                    .map((item) => (
+                        <label
+                            key={item.id}
+                            className="flex items-center justify-between gap-s rounded-lg px-m py-s text-200 leading-200 text-popover-foreground hover:bg-muted"
+                        >
+                            <span>{String(item.columnDef.header ?? item.id)}</span>
+                            <input
+                                type="checkbox"
+                                checked={item.getIsVisible()}
+                                onChange={item.getToggleVisibilityHandler()}
+                                className="h-4 w-4 rounded border-border accent-[var(--color-primary)]"
+                            />
+                        </label>
+                    ))}
+            </div>
+        </div>
+    );
+}
+
 export function PlReportShell() {
     const tableQuery = plTable();
     const yearlyQuery = yearSummary();
-    const trendQuery = monthTrend();
+
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
+        left: ["account"],
+        right: [],
+    });
+    const [openFilterColumnId, setOpenFilterColumnId] = useState<string | null>(null);
+    const [openMenuColumnId, setOpenMenuColumnId] = useState<string | null>(null);
 
     const plTableResult = useSemanticModelQuery({
         connection: tableQuery.connection,
@@ -180,30 +486,25 @@ export function PlReportShell() {
         connection: yearlyQuery.connection,
         query: yearlyQuery.query,
     });
-    const trendResult = useSemanticModelQuery({
-        connection: trendQuery.connection,
-        query: trendQuery.query,
-    });
 
-    const isLoading = plTableResult.isLoading || yearlyResult.isLoading || trendResult.isLoading;
-    const networkError = firstError(plTableResult.error, yearlyResult.error, trendResult.error);
-    const queryError =
-        dataError(plTableResult.data) ?? dataError(yearlyResult.data) ?? dataError(trendResult.data);
+    const isLoading = plTableResult.isLoading || yearlyResult.isLoading;
+    const networkError = firstError(plTableResult.error, yearlyResult.error);
+    const queryError = dataError(plTableResult.data) ?? dataError(yearlyResult.data);
     const errorMessage = networkError?.message ?? queryError;
 
     const yearlyRows = useMemo(() => {
         if (yearlyResult.data?.status !== "success") return [];
-        return toAgGridData(yearlyResult.data.table, yearlyQuery.columnMetadata).rowData;
+        return queryTableToRows(yearlyResult.data.table, yearlyQuery.columnMetadata);
     }, [yearlyResult.data, yearlyQuery.columnMetadata]);
 
     const latestYear = yearlyRows.at(-1);
     const latestYearLabel = latestYear?.FechaYear != null ? String(latestYear.FechaYear) : "-";
-    const latestImporte = toNumber(latestYear?.Importe);
-    const latestPresupuesto = toNumber(latestYear?.Presupuesto);
-    const latestPresupuestoAA = toNumber(latestYear?.PresupuestoAA);
-    const latestImporteAA = toNumber(latestYear?.ImporteAA);
-    const latestEbitda = toNumber(latestYear?.EBITDA);
-    const latestEbitdaAA = toNumber(latestYear?.EBITDAAA);
+    const latestImporte = toNumber(latestYear?.Importe) ?? 0;
+    const latestPresupuesto = toNumber(latestYear?.Presupuesto) ?? 0;
+    const latestPresupuestoAA = toNumber(latestYear?.PresupuestoAA) ?? 0;
+    const latestImporteAA = toNumber(latestYear?.ImporteAA) ?? 0;
+    const latestEbitda = toNumber(latestYear?.EBITDA) ?? 0;
+    const latestEbitdaAA = toNumber(latestYear?.EBITDAAA) ?? 0;
     const previousYearLabel =
         latestYear?.FechaYear != null && Number.isFinite(Number(latestYear.FechaYear))
             ? String(Number(latestYear.FechaYear) - 1)
@@ -211,6 +512,7 @@ export function PlReportShell() {
 
     const summaryRow = useMemo<PlGridRow | undefined>(() => {
         if (!latestYear) return undefined;
+
         const row: GridRow = {
             CuentaAccount: `Resumen ${latestYearLabel}`,
             CuentaSign: 1,
@@ -218,10 +520,12 @@ export function PlReportShell() {
             Presupuesto: latestPresupuesto,
             ImporteAA: latestImporteAA,
             Variacion: latestImporte - latestPresupuesto,
-            VariacionPct: latestPresupuesto === 0 ? undefined : (latestImporte - latestPresupuesto) / latestPresupuesto,
+            VariacionPct:
+                latestPresupuesto === 0 ? undefined : (latestImporte - latestPresupuesto) / latestPresupuesto,
             VariacionAA: latestImporte - latestImporteAA,
             VariacionAAPct: latestImporteAA === 0 ? undefined : (latestImporte - latestImporteAA) / latestImporteAA,
         };
+
         return {
             ...row,
             varianceLabel: getVarianceLabel(row),
@@ -232,33 +536,9 @@ export function PlReportShell() {
     const treeRows = useMemo(() => {
         if (plTableResult.data?.status !== "success" || !summaryRow) return [] as PlTreeRow[];
 
-        const dataTable = toDataTable(plTableResult.data.table, tableQuery.columnMetadata);
-        const converted = toAgGridData(
-            { columns: plTableResult.data.table.columns, rows: dataTable.rows },
-            tableQuery.columnMetadata,
-        );
-
-        return flattenHierarchyToTreeRows(buildPlHierarchy(converted.rowData, summaryRow));
+        const rows = queryTableToRows(plTableResult.data.table, tableQuery.columnMetadata);
+        return mapHierarchyToTreeRows(buildPlHierarchy(rows, summaryRow));
     }, [plTableResult.data, summaryRow, tableQuery.columnMetadata]);
-
-    const trendRows = useMemo(() => {
-        if (trendResult.data?.status !== "success") return [];
-        return toAgGridData(trendResult.data.table, trendQuery.columnMetadata).rowData;
-    }, [trendResult.data, trendQuery.columnMetadata]);
-
-    const chartOptions: AgChartOptions = useMemo(
-        () => ({
-            data: trendRows,
-            background: { fill: "transparent" },
-            series: [
-                { type: "line", xKey: "FechaYearMonth", yKey: "Importe", yName: "Importe" },
-                { type: "line", xKey: "FechaYearMonth", yKey: "Gastos", yName: "Gastos" },
-                { type: "line", xKey: "FechaYearMonth", yKey: "EBITDA", yName: "EBITDA" },
-            ],
-            legend: { enabled: true },
-        }),
-        [trendRows],
-    );
 
     const importeVsBudget = latestImporte - latestPresupuesto;
     const importeVsBudgetPct = latestPresupuesto === 0 ? undefined : importeVsBudget / latestPresupuesto;
@@ -274,63 +554,103 @@ export function PlReportShell() {
     const ebitdaVsYearPct = latestEbitdaAA === 0 ? undefined : ebitdaVsYear / latestEbitdaAA;
     const ebitdaVsYearTone = toComparisonTone(ebitdaVsYear, 1);
 
-    const columnDefs = useMemo<ColDef<PlTreeRow>[]>(
+    const columns = useMemo<ColumnDef<PlTreeRow>[]>(
         () => [
             {
-                headerName: "Cuenta",
-                showRowGroup: true,
-                pinned: "left",
-                minWidth: 280,
-                filter: "agTextColumnFilter",
-                cellRenderer: AutoGroupCell,
-                valueFormatter: (params) => String(params.value ?? ""),
+                id: "account",
+                accessorKey: "CuentaAccount",
+                header: "Cuenta",
+                enableHiding: false,
+                filterFn: accountFilter,
+                meta: { align: "left", filterType: "text" } satisfies PlColumnMeta,
+                cell: ({ row }) => <AccountCell row={row} />,
             },
             {
-                field: "Importe",
-                headerName: "Actual",
-                filter: "agNumberColumnFilter",
-                valueFormatter: (params: ValueFormatterParams<PlTreeRow>) => formatCurrencyEs(params.value),
-                cellClass: "text-right",
+                id: "Importe",
+                accessorKey: "Importe",
+                header: "Actual",
+                filterFn: numericFilter,
+                meta: { align: "right", filterType: "number" } satisfies PlColumnMeta,
+                cell: ({ getValue }) => formatCurrencyEs(getValue()),
             },
             {
-                field: "Presupuesto",
-                headerName: "Presupuesto",
-                filter: "agNumberColumnFilter",
-                valueFormatter: (params: ValueFormatterParams<PlTreeRow>) => formatCurrencyEs(params.value),
-                cellClass: "text-right",
+                id: "Presupuesto",
+                accessorKey: "Presupuesto",
+                header: "Presupuesto",
+                filterFn: numericFilter,
+                meta: { align: "right", filterType: "number" } satisfies PlColumnMeta,
+                cell: ({ getValue }) => formatCurrencyEs(getValue()),
             },
             {
-                field: "ImporteAA",
-                headerName: "Año anterior",
-                filter: "agNumberColumnFilter",
-                valueFormatter: (params: ValueFormatterParams<PlTreeRow>) => formatCurrencyEs(params.value),
-                cellClass: "text-right",
+                id: "ImporteAA",
+                accessorKey: "ImporteAA",
+                header: "Año anterior",
+                filterFn: numericFilter,
+                meta: { align: "right", filterType: "number" } satisfies PlColumnMeta,
+                cell: ({ getValue }) => formatCurrencyEs(getValue()),
             },
             {
-                field: "Variacion",
-                headerName: "vs plan",
-                filter: "agNumberColumnFilter",
-                cellRenderer: (params: CustomCellRendererProps<PlTreeRow>) => (
-                    <DeltaCell {...params} tone={params.data?.varianceTone ?? "neutral"} pctField="VariacionPct" />
-                ),
-                comparator: (left, right) => toNumber(left) - toNumber(right),
-            },
-            {
-                field: "VariacionAA",
-                headerName: "vs AA",
-                filter: "agNumberColumnFilter",
-                cellRenderer: (params: CustomCellRendererProps<PlTreeRow>) => (
+                id: "Variacion",
+                accessorKey: "Variacion",
+                header: "vs plan",
+                filterFn: numericFilter,
+                meta: { align: "right", filterType: "number" } satisfies PlColumnMeta,
+                cell: ({ row, getValue }) => (
                     <DeltaCell
-                        {...params}
-                        tone={toComparisonTone(toNumber(params.value), toNumber(params.data?.CuentaSign) || 1)}
-                        pctField="VariacionAAPct"
+                        value={getValue()}
+                        pctValue={signedPercentFromDelta(getValue(), row.original.VariacionPct)}
+                        tone={row.original.varianceTone ?? "neutral"}
                     />
                 ),
-                comparator: (left, right) => toNumber(left) - toNumber(right),
+            },
+            {
+                id: "VariacionAA",
+                accessorKey: "VariacionAA",
+                header: "vs AA",
+                filterFn: numericFilter,
+                meta: { align: "right", filterType: "number" } satisfies PlColumnMeta,
+                cell: ({ row, getValue }) => (
+                    <DeltaCell
+                        value={getValue()}
+                        pctValue={signedPercentFromDelta(getValue(), row.original.VariacionAAPct)}
+                        tone={toComparisonTone(
+                            toNumber(getValue()) ?? 0,
+                            toNumber(row.original.CuentaSign) ?? 1,
+                        )}
+                    />
+                ),
             },
         ],
         [],
     );
+
+    const table = useReactTable({
+        data: treeRows,
+        columns,
+        state: {
+            sorting,
+            expanded,
+            columnFilters,
+            columnVisibility,
+            columnPinning,
+        },
+        onSortingChange: setSorting,
+        onExpandedChange: setExpanded,
+        onColumnFiltersChange: setColumnFilters,
+        onColumnVisibilityChange: setColumnVisibility,
+        onColumnPinningChange: setColumnPinning,
+        filterFns: {
+            accountFilter,
+            numericFilter,
+        },
+        getSubRows: (row) => row.subRows ?? [],
+        getRowId: (row) => row.id,
+        getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        filterFromLeafRows: true,
+    });
 
     return (
         <div className="space-y-xxl">
@@ -392,7 +712,7 @@ export function PlReportShell() {
                             Tabla P&amp;L
                         </h2>
                         <p className="mt-xs text-300 leading-300 text-muted-foreground">
-                            AG Grid Enterprise con tree data nativo, filtros por columna y ordenación integrada.
+                            TanStack Table con jerarquía, filtros por columna y menú de cabecera propio.
                         </p>
                     </div>
                     <div className="flex items-center gap-s text-200 leading-200 text-muted-foreground">
@@ -400,65 +720,152 @@ export function PlReportShell() {
                         <Table2 className="icon-size-400" />
                     </div>
                 </div>
-                <div className="ag-theme-quartz overflow-hidden rounded-xl border border-border">
-                    <AgGridProvider modules={[AllEnterpriseModule]}>
-                        <AgGridReact<PlTreeRow>
-                            theme="legacy"
-                            rowData={treeRows}
-                            columnDefs={columnDefs}
-                            treeData
-                            getDataPath={(data) => data.hierarchyPath}
-                            groupDefaultExpanded={1}
-                            animateRows
-                            suppressDragLeaveHidesColumns
-                            defaultColDef={{
-                                sortable: true,
-                                resizable: true,
-                                flex: 1,
-                                minWidth: 140,
-                                filter: true,
-                                suppressHeaderMenuButton: false,
-                                suppressHeaderFilterButton: false,
-                            }}
-                            autoGroupColumnDef={{
-                                headerName: "Cuenta",
-                                minWidth: 320,
-                                pinned: "left",
-                                filter: "agTextColumnFilter",
-                                cellRendererParams: {
-                                    suppressCount: true,
-                                },
-                            }}
-                            domLayout="autoHeight"
-                            rowClassRules={{
-                                "pl-grid-parent-row": (params) =>
-                                    ["summary", "income", "expense", "metric"].includes(
-                                        String(params.data?.nodeType ?? ""),
-                                    ),
-                            }}
-                            overlayNoRowsTemplate="Sin datos P&L disponibles"
-                        />
-                    </AgGridProvider>
-                </div>
-            </section>
 
-            <section className="rounded-xl border border-border bg-card p-l shadow-sm">
-                <div className="mb-l">
-                    <h2 className="text-500 leading-500 font-semibold text-card-foreground">
-                        Tendencia de resultado
-                    </h2>
-                    <p className="mt-xs text-300 leading-300 text-muted-foreground">
-                        Ultimos 24 meses por importe, gastos y EBITDA.
-                    </p>
-                </div>
-                <div className="h-[320px] rounded-xl border border-border bg-card p-m">
-                    {isTest ? (
-                        <div className="flex h-full items-center justify-center text-300 leading-300 text-muted-foreground">
-                            Grafico disponible en navegador
-                        </div>
-                    ) : (
-                        <AgCharts options={chartOptions} />
-                    )}
+                <div className="overflow-auto rounded-xl border border-border">
+                    <table className="pl-finance-table min-w-full border-separate border-spacing-0">
+                        <thead>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <tr key={headerGroup.id} className="bg-secondary">
+                                    {headerGroup.headers.map((header) => {
+                                        const meta = header.column.columnDef.meta as PlColumnMeta | undefined;
+                                        const isAccount = header.column.id === "account";
+                                        const filterType = meta?.filterType;
+                                        const headerLabel = String(header.column.columnDef.header ?? header.column.id);
+
+                                        return (
+                                            <th
+                                                key={header.id}
+                                                className={cn(
+                                                    "relative border-b border-border px-m py-s text-200 leading-200 font-semibold text-secondary-foreground",
+                                                    meta?.align === "right" ? "text-right" : "text-left",
+                                                    isAccount && "sticky left-0 z-10 min-w-[320px] bg-secondary",
+                                                    !isAccount && "min-w-[160px]",
+                                                )}
+                                            >
+                                                {header.isPlaceholder ? null : (
+                                                    <div className="flex items-center justify-between gap-s">
+                                                        <div className="flex min-w-0 items-center gap-s">
+                                                            <span className="truncate">
+                                                                {flexRender(
+                                                                    header.column.columnDef.header,
+                                                                    header.getContext(),
+                                                                )}
+                                                            </span>
+                                                            {sortIndicator(header.column)}
+                                                        </div>
+                                                        <div className="flex items-center gap-xs">
+                                                            {filterType ? (
+                                                                <ColumnHeaderButton
+                                                                    active={header.column.getIsFiltered()}
+                                                                    label={`Filtrar columna ${headerLabel}`}
+                                                                    onClick={() => {
+                                                                        setOpenMenuColumnId(null);
+                                                                        setOpenFilterColumnId((current) =>
+                                                                            current === header.column.id
+                                                                                ? null
+                                                                                : header.column.id,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Filter className="icon-size-200" />
+                                                                </ColumnHeaderButton>
+                                                            ) : null}
+                                                            <ColumnHeaderButton
+                                                                active={openMenuColumnId === header.column.id}
+                                                                label={`Opciones de columna ${headerLabel}`}
+                                                                onClick={() => {
+                                                                    setOpenFilterColumnId(null);
+                                                                    setOpenMenuColumnId((current) =>
+                                                                        current === header.column.id
+                                                                            ? null
+                                                                            : header.column.id,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Ellipsis className="icon-size-200" />
+                                                            </ColumnHeaderButton>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {openFilterColumnId === header.column.id && filterType === "text" ? (
+                                                    <TextFilterPanel
+                                                        column={header.column}
+                                                        onClose={() => setOpenFilterColumnId(null)}
+                                                    />
+                                                ) : null}
+
+                                                {openFilterColumnId === header.column.id && filterType === "number" ? (
+                                                    <NumericFilterPanel
+                                                        column={header.column}
+                                                        onClose={() => setOpenFilterColumnId(null)}
+                                                    />
+                                                ) : null}
+
+                                                {openMenuColumnId === header.column.id ? (
+                                                    <ColumnMenuPanel
+                                                        column={header.column}
+                                                        columns={table.getAllLeafColumns()}
+                                                        onClose={() => setOpenMenuColumnId(null)}
+                                                    />
+                                                ) : null}
+                                            </th>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </thead>
+                        <tbody>
+                            {table.getRowModel().rows.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={table.getAllLeafColumns().length}
+                                        className="px-l py-xxl text-center text-300 leading-300 text-muted-foreground"
+                                    >
+                                        Sin datos P&amp;L disponibles
+                                    </td>
+                                </tr>
+                            ) : (
+                                table.getRowModel().rows.map((row) => {
+                                    const rowSurface = rowSurfaceClass(row.original.nodeType);
+
+                                    return (
+                                        <tr
+                                            key={row.id}
+                                            className={cn(
+                                                "group border-b border-border/70 transition-colors hover:bg-hover/60",
+                                                rowSurface,
+                                            )}
+                                        >
+                                            {row.getVisibleCells().map((cell) => {
+                                                const meta = cell.column.columnDef.meta as PlColumnMeta | undefined;
+                                                const isAccount = cell.column.id === "account";
+
+                                                return (
+                                                    <td
+                                                        key={cell.id}
+                                                        className={cn(
+                                                            "border-b border-border/70 px-m py-s text-300 leading-300 text-card-foreground",
+                                                            meta?.align === "right"
+                                                                ? "text-right font-numeric"
+                                                                : "text-left",
+                                                            isAccount &&
+                                                                cn(
+                                                                    "sticky left-0 z-[1]",
+                                                                    rowSurface,
+                                                                ),
+                                                        )}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </div>

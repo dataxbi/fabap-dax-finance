@@ -40,7 +40,7 @@ export default function App() {
                             Informe P&amp;L
                         </h1>
                         <p className="mt-xs text-300 leading-300 text-muted-foreground">
-                            Resultado económico del negocio con tabla ejecutiva y tendencias.
+                            Resultado económico del negocio con tabla ejecutiva y comparativas.
                         </p>
                     </div>
                     <div className="rounded-lg border border-border bg-card px-l py-s text-200 leading-200 text-muted-foreground">

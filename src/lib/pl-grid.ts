@@ -1,4 +1,4 @@
-import type { GridRow } from "@/lib/ag-grid-data";
+import type { GridRow } from "@/lib/query-table-rows";
 
 export type VarianceTone = "positive" | "negative" | "neutral";
 
@@ -18,8 +18,8 @@ export interface PlHierarchyNode {
 
 export interface PlTreeRow extends PlGridRow {
     id: string;
-    hierarchyPath: string[];
     nodeType: "summary" | "income" | "expense" | "metric" | "leaf";
+    subRows?: PlTreeRow[];
 }
 
 function toFiniteNumber(value: unknown): number | undefined {
@@ -196,15 +196,22 @@ export function flattenHierarchyToTreeRows(nodes: PlHierarchyNode[]): PlTreeRow[
         const self: PlTreeRow = {
             ...node.row,
             id: node.id,
-            hierarchyPath: [node.label],
             nodeType: rowTypeForNode(node),
         };
 
         const children = flattenHierarchyToTreeRows(node.children).map((child) => ({
             ...child,
-            hierarchyPath: [node.label, ...child.hierarchyPath],
         }));
 
         return [self, ...children];
     });
+}
+
+export function mapHierarchyToTreeRows(nodes: PlHierarchyNode[]): PlTreeRow[] {
+    return nodes.map((node) => ({
+        ...node.row,
+        id: node.id,
+        nodeType: rowTypeForNode(node),
+        subRows: mapHierarchyToTreeRows(node.children),
+    }));
 }
