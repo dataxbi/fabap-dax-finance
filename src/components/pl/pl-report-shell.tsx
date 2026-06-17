@@ -658,7 +658,6 @@ export function PlReportShell() {
                 <StatusCard
                     label={`Importe ${latestYearLabel}`}
                     value={formatCurrencyEs(latestImporte)}
-                    detail="Medida [Importe] del modelo P&L"
                     tone="success"
                     icon={<Database className="icon-size-300" />}
                     comparisons={[
@@ -677,7 +676,6 @@ export function PlReportShell() {
                 <StatusCard
                     label={`Presupuesto ${latestYearLabel}`}
                     value={formatCurrencyEs(latestPresupuesto)}
-                    detail="Medida [Presupuesto]"
                     icon={<Table2 className="icon-size-300" />}
                     comparisons={[
                         {
@@ -690,7 +688,6 @@ export function PlReportShell() {
                 <StatusCard
                     label={`EBITDA ${latestYearLabel}`}
                     value={formatCurrencyEs(latestEbitda)}
-                    detail="Medida [EBITDA]"
                     icon={<BarChart3 className="icon-size-300" />}
                     comparisons={[
                         {

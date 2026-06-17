@@ -43,9 +43,6 @@ export default function App() {
                             Resultado económico del negocio con tabla ejecutiva y comparativas.
                         </p>
                     </div>
-                    <div className="rounded-lg border border-border bg-card px-l py-s text-200 leading-200 text-muted-foreground">
-                        Formato es-ES - datos reales de Fabric
-                    </div>
                 </div>
 
                 <PlReportShell />
