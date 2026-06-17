@@ -37,7 +37,7 @@ export default function App() {
                             Dataxbi Financial Analytics
                         </p>
                         <h1 className="text-hero-700 font-bold text-foreground leading-hero-700">
-                            Informe P&amp;L
+                            Informe PyG
                         </h1>
                         <p className="mt-xs text-300 leading-300 text-muted-foreground">
                             Resultado económico del negocio con tabla ejecutiva y comparativas.

@@ -79,10 +79,10 @@ describe("App", () => {
         expect(() => render(<App />)).not.toThrow();
     });
 
-    it("shows the P&L table without the removed trend chart", () => {
+    it("shows the PyG table without the removed trend chart", () => {
         render(<App />);
 
-        expect(screen.getByText("Tabla P&L")).toBeInTheDocument();
+        expect(screen.getByText("Tabla PyG")).toBeInTheDocument();
         expect(screen.queryByText("Tendencia de resultado")).not.toBeInTheDocument();
     });
 });

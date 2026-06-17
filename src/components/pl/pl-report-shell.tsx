@@ -706,7 +706,7 @@ export function PlReportShell() {
                 <div className="mb-l flex items-center justify-between gap-l">
                     <div>
                         <h2 className="text-500 leading-500 font-semibold text-card-foreground">
-                            Tabla P&amp;L
+                            Tabla PyG
                         </h2>
                         <p className="mt-xs text-300 leading-300 text-muted-foreground">
                             TanStack Table con jerarquía, filtros por columna y menú de cabecera propio.
@@ -819,7 +819,7 @@ export function PlReportShell() {
                                         colSpan={table.getAllLeafColumns().length}
                                         className="px-l py-xxl text-center text-300 leading-300 text-muted-foreground"
                                     >
-                                        Sin datos P&amp;L disponibles
+                                        Sin datos PyG disponibles
                                     </td>
                                 </tr>
                             ) : (
