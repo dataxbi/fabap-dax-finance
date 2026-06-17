@@ -1,6 +1,6 @@
 import { AlertTriangle, BarChart3, Database, RefreshCw, Table2 } from "lucide-react";
-import { AgGridReact } from "ag-grid-react";
-import type { ColDef } from "ag-grid-community";
+import { AgGridProvider, AgGridReact } from "ag-grid-react";
+import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import { AgCharts } from "ag-charts-react";
 import type { AgChartOptions } from "ag-charts-community";
 import { useMemo } from "react";
@@ -171,12 +171,19 @@ export function PlReportShell() {
                     <Table2 className="icon-size-400 text-muted-foreground" />
                 </div>
                 <div className="ag-theme-quartz h-full min-h-[320px] overflow-hidden rounded-xl border border-border">
-                    <AgGridReact<GridRow>
-                        columnDefs={gridData.columnDefs}
-                        rowData={gridData.rowData}
-                        overlayNoRowsTemplate="Sin datos P&L disponibles"
-                        suppressDragLeaveHidesColumns
-                    />
+                    <AgGridProvider modules={[AllCommunityModule]}>
+                        <AgGridReact<GridRow>
+                            key={gridData.columnDefs.length}
+                            columnDefs={gridData.columnDefs}
+                            rowData={gridData.rowData}
+                            defaultColDef={{
+                                flex: 1,
+                                minWidth: 120,
+                            }}
+                            overlayNoRowsTemplate="Sin datos P&L disponibles"
+                            suppressDragLeaveHidesColumns
+                        />
+                    </AgGridProvider>
                 </div>
             </section>
 
