@@ -1,50 +1,50 @@
 @import "tailwindcss";
+@import "ag-grid-community/styles/ag-grid.css";
+@import "ag-grid-community/styles/ag-theme-quartz.css";
 
 @custom-variant dark (&:is(.dark *));
 
-/* Bridged tokens — kept in `@theme static` so the CSS vars are always
-   emitted, not tree-shaken when no Tailwind utility consumes them.
-   Required because <VegaVisual> and <DataGrid> read these at runtime via
-   `useCssTheme()` and project them into a JS theme object (Vega's SVG output
-   cannot resolve `var()` references). */
+/* Google Fonts - DM Sans loaded via index.html */
+
+/* Bridged tokens — kept in `@theme static` so CSS vars are always emitted.
+   Required for components that read these at runtime via useCssTheme(). */
 @theme static {
-  --color-brand:            #0f6cbd;  /* bar/area fills, button-like brand surfaces */
-  --color-brand-foreground: #0f6cbd;  /* line/point marks, branded text & emphasis */
-  --color-hover:            #f5f5f5;  /* row/cell hover surface in DataGrid + visuals */
+  --color-brand:            #0066cc;  /* Dataxbi primary blue */
+  --color-brand-foreground: #0066cc;
+  --color-hover:            #f0f4fa;
 }
 
 @theme {
-  /* Color tokens — light theme
-     Usage: bg-*, text-*, border-* (e.g. bg-primary text-primary-foreground)
-     Each token has a -foreground pair for text on that surface. */
-  --color-background: #ffffff;                                       /* page background */
-  --color-foreground: #242424;                                       /* default text */
+  /* Color tokens - light theme */
+  --color-background: #f8f9fa;
+  --color-foreground: #1a2332;
 
-  --color-card: #ffffff;                                             /* card surfaces */
-  --color-card-foreground: #242424;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a2332;
 
-  --color-popover: #ffffff;                                          /* popover/dropdown surfaces */
-  --color-popover-foreground: #242424;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1a2332;
 
-  --color-primary: #0f6cbd;                                          /* primary actions & buttons */
+  --color-primary: #0066cc;          /* Dataxbi corporate blue */
   --color-primary-foreground: #ffffff;
 
-  --color-secondary: #fafafa;                                        /* secondary actions */
-  --color-secondary-foreground: #242424;
+  --color-secondary: #f0f4fa;
+  --color-secondary-foreground: #1a2332;
 
-  --color-muted: #f0f0f0;                                            /* subtle backgrounds */
-  --color-muted-foreground: #616161;                                 /* subdued text */
+  --color-muted: #eef1f6;
+  --color-muted-foreground: #5a6a7e;
 
-  --color-accent: #f5f5f5;                                           /* accent highlights */
-  --color-accent-foreground: #242424;
+  --color-accent: #e6f0ff;           /* light blue tint */
+  --color-accent-foreground: #004d99;
 
-  --color-destructive: #c50f1f;                                      /* errors & destructive actions */
+  --color-destructive: #c50f1f;
   --color-destructive-foreground: #ffffff;
 
-  --color-border: #e0e0e0;                                           /* default border */
-  --color-input: #e0e0e0;                                            /* input field borders */
-  --color-ring: #0f6cbd;                                             /* focus rings */
+  --color-border: #d6e0ee;
+  --color-input: #d6e0ee;
+  --color-ring: #0066cc;
 
+  /* Radius */
   --radius-none: 0;
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -58,8 +58,7 @@
   --radius-full: 9999px;
   --radius: 6px;
 
-    /* Spacing — 4px baseline grid 
-      Usage: p-*, m-*, gap-* (e.g. p-l gap-m) */
+  /* Spacing - 4px baseline grid */
   --spacing-none: 0;
   --spacing-xxs: 2px;
   --spacing-xs: 4px;
@@ -72,8 +71,7 @@
   --spacing-xxl: 24px;
   --spacing-xxxl: 32px;
 
-  /* Font Sizes — 100-based scale 
-     Usage: text-* (e.g. text-300, text-hero-900) */
+  /* Font Sizes */
   --text-100: 10px;
   --text-200: 12px;
   --text-300: 14px;
@@ -85,8 +83,7 @@
   --text-hero-900: 40px;
   --text-hero-1000: 68px;
 
-  /* Line Heights — paired with font sizes
-     Usage: leading-* (e.g. leading-300) */
+  /* Line Heights */
   --leading-100: 14px;
   --leading-200: 16px;
   --leading-300: 20px;
@@ -98,26 +95,19 @@
   --leading-hero-900: 52px;
   --leading-hero-1000: 92px;
 
-  /* Font Weights
-     Usage: font-* (e.g. font-semibold) */
+  /* Font Weights */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Font Families
-     Usage: font-* (e.g. font-heading, font-base) */
-  --font-heading: 'Segoe UI', 'Segoe UI Web (West European)',       /* headings, titles, display text */
-    -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
-  --font-base: 'Segoe UI', 'Segoe UI Web (West European)',          /* body text, labels, UI controls */
-    -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
-  --font-monospace: Consolas, 'Courier New', Courier, monospace;     /* code, pre-formatted text */
-  --font-numeric: Bahnschrift, 'Segoe UI',                          /* KPI values, numeric displays */
-    'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto,
-    'Helvetica Neue', sans-serif;
+  /* Font Families */
+  --font-heading: 'DM Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-base: 'DM Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-monospace: Consolas, 'Courier New', Courier, monospace;
+  --font-numeric: 'DM Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Icon Sizes — 100-based scale
-     Usage: icon-size-* custom utility (e.g. icon-size-200) */
+  /* Icon Sizes */
   --icon-size-100: 12px;
   --icon-size-200: 16px;
   --icon-size-300: 20px;
@@ -134,38 +124,37 @@
 
 @layer base {
   .dark {
-    /* Color tokens — dark theme */
-    --color-background: #292929;
-    --color-foreground: #ffffff;
+    --color-background: #0f1923;
+    --color-foreground: #e8edf5;
 
-    --color-card: #292929;
-    --color-card-foreground: #ffffff;
+    --color-card: #1a2535;
+    --color-card-foreground: #e8edf5;
 
-    --color-popover: #292929;
-    --color-popover-foreground: #ffffff;
+    --color-popover: #1a2535;
+    --color-popover-foreground: #e8edf5;
 
-    --color-primary: #115ea3;
+    --color-primary: #3385d6;
     --color-primary-foreground: #ffffff;
 
-    --color-secondary: #1f1f1f;
-    --color-secondary-foreground: #ffffff;
+    --color-secondary: #1e2d42;
+    --color-secondary-foreground: #e8edf5;
 
-    --color-muted: #141414;
-    --color-muted-foreground: #adadad;
+    --color-muted: #172030;
+    --color-muted-foreground: #8da0b8;
 
-    --color-accent: #3d3d3d;
-    --color-accent-foreground: #ffffff;
+    --color-accent: #1e3a5f;
+    --color-accent-foreground: #9ec5f5;
 
     --color-destructive: #c50f1f;
     --color-destructive-foreground: #ffffff;
 
-    --color-border: #525252;
-    --color-input: #525252;
-    --color-ring: #479ef5;
+    --color-border: #2a3d56;
+    --color-input: #2a3d56;
+    --color-ring: #3385d6;
 
-    --color-brand:            #115ea3;
-    --color-brand-foreground: #479ef5;
-    --color-hover:            #3d3d3d;
+    --color-brand:            #3385d6;
+    --color-brand-foreground: #7ab8f0;
+    --color-hover:            #1e2d42;
   }
 }
 
@@ -176,6 +165,36 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-base);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  select, input, textarea, button {
+    font-family: inherit;
+  }
+
+  .ag-theme-quartz,
+  .ag-theme-quartz-dark {
+    --ag-font-family: var(--font-base);
+    --ag-font-size: var(--text-300);
+    --ag-background-color: var(--color-card);
+    --ag-foreground-color: var(--color-card-foreground);
+    --ag-header-background-color: var(--color-secondary);
+    --ag-header-foreground-color: var(--color-secondary-foreground);
+    --ag-border-color: var(--color-border);
+    --ag-row-hover-color: var(--color-hover);
+    --ag-selected-row-background-color: var(--color-accent);
+    --ag-wrapper-border-radius: var(--radius-xl);
+    --ag-cell-horizontal-padding: var(--spacing-m);
+    --ag-odd-row-background-color: transparent;
+  }
+
+  .ag-theme-quartz .ag-root-wrapper,
+  .ag-theme-quartz-dark .ag-root-wrapper {
+    border-color: var(--color-border);
   }
 }
 

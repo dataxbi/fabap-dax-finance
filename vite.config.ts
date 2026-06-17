@@ -54,7 +54,7 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        include: ['@microsoft/fabric-visuals', '@microsoft/fabric-datagrid', '@microsoft/fabric-visuals-core'],
+        include: ['ag-grid-community', 'ag-grid-react', 'ag-charts-community', 'ag-charts-react'],
     },
     build: {
         commonjsOptions: {
