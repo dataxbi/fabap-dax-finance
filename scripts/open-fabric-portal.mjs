@@ -43,7 +43,7 @@ const env = found.reduce((acc, file) => ({ ...parseEnvFile(file), ...acc }), {})
 const portal = (env.VITE_FABRIC_PORTAL_URL || '').replace(/\/$/, '');
 const ws = env.VITE_FABRIC_WORKSPACE_ID;
 const item = env.VITE_FABRIC_ITEM_ID;
-const dev = process.env.DEV_URL || 'http://localhost:5173';
+const dev = process.env.DEV_URL || 'http://127.0.0.1:5173';
 
 if (!portal || !ws || !item) {
     console.error(

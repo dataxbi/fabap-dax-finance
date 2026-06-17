@@ -174,6 +174,7 @@ export function PlReportShell() {
                     <AgGridProvider modules={[AllCommunityModule]}>
                         <AgGridReact<GridRow>
                             key={gridData.columnDefs.length}
+                            theme="legacy"
                             columnDefs={gridData.columnDefs}
                             rowData={gridData.rowData}
                             defaultColDef={{
