@@ -1,5 +1,5 @@
-id: fabapp-ag-grid-pl
-name: fabapp-ag-grid-pl
+id: fabapp-dax-finance
+name: Fabric App - DAX Finance
 version: 1.0.0
 services:
   auth:
