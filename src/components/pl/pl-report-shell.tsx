@@ -6,7 +6,7 @@ import type { AgChartOptions } from "ag-charts-community";
 import { useMemo } from "react";
 import { StatusCard } from "@/components/pl/status-card";
 import { registerAgCommunityModules } from "@/lib/ag-community-modules";
-import { formatCurrencyEs } from "@/lib/format";
+import { formatCurrencyEs, formatPercentEs } from "@/lib/format";
 import { toAgGridData, type GridRow } from "@/lib/ag-grid-data";
 import { toDataTable } from "@/lib/to-data-table";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
@@ -53,6 +53,13 @@ function dataError(data: ReturnType<typeof useSemanticModelQuery>["data"]) {
 
 function toNumber(value: unknown) {
     return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function cellText(value: unknown, kind: "currency" | "percent" | "text" = "text") {
+    if (value == null || value === "") return "-";
+    if (kind === "currency") return formatCurrencyEs(value);
+    if (kind === "percent") return formatPercentEs(value);
+    return String(value);
 }
 
 export function PlReportShell() {
@@ -111,6 +118,7 @@ export function PlReportShell() {
     const latestImporte = toNumber(latestYear?.Importe);
     const latestPresupuesto = toNumber(latestYear?.Presupuesto);
     const latestEbitda = toNumber(latestYear?.EBITDA);
+    const tableRowCount = gridData.rowData.length;
 
     const trendRows = useMemo(() => {
         if (trendResult.data?.status !== "success") return [];
@@ -168,7 +176,10 @@ export function PlReportShell() {
                             Cuentas ordenadas por el modelo con importe, presupuesto y variacion.
                         </p>
                     </div>
-                    <Table2 className="icon-size-400 text-muted-foreground" />
+                    <div className="flex items-center gap-s text-200 leading-200 text-muted-foreground">
+                        <span>{tableRowCount} filas</span>
+                        <Table2 className="icon-size-400" />
+                    </div>
                 </div>
                 <div className="ag-theme-quartz h-full min-h-[320px] overflow-hidden rounded-xl border border-border">
                     <AgGridProvider modules={[AllCommunityModule]}>
@@ -186,6 +197,45 @@ export function PlReportShell() {
                         />
                     </AgGridProvider>
                 </div>
+                {tableRowCount > 0 ? (
+                    <div className="mt-l overflow-x-auto rounded-xl border border-border">
+                        <table className="min-w-full text-left text-300 leading-300">
+                            <thead className="bg-secondary text-secondary-foreground">
+                                <tr>
+                                    <th className="px-m py-s font-semibold">Cuenta</th>
+                                    <th className="px-m py-s text-right font-semibold">Importe</th>
+                                    <th className="px-m py-s text-right font-semibold">Presupuesto</th>
+                                    <th className="px-m py-s text-right font-semibold">Variacion</th>
+                                    <th className="px-m py-s text-right font-semibold">Variacion %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {gridData.rowData.map((row) => (
+                                    <tr
+                                        key={String(row.CuentaAccount)}
+                                        className="border-t border-border text-card-foreground"
+                                    >
+                                        <td className="px-m py-s font-medium">
+                                            {cellText(row.CuentaAccount)}
+                                        </td>
+                                        <td className="px-m py-s text-right">
+                                            {cellText(row.Importe, "currency")}
+                                        </td>
+                                        <td className="px-m py-s text-right">
+                                            {cellText(row.Presupuesto, "currency")}
+                                        </td>
+                                        <td className="px-m py-s text-right">
+                                            {cellText(row.Variacion, "currency")}
+                                        </td>
+                                        <td className="px-m py-s text-right">
+                                            {cellText(row.VariacionPct, "percent")}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : null}
             </section>
 
             <section className="grid gap-l lg:grid-cols-3">

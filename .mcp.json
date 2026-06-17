@@ -1,5 +1,13 @@
 {
   "mcpServers": {
+    "ag-mcp": {
+      "args": [
+        "-y",
+        "ag-mcp"
+      ],
+      "command": "npx",
+      "type": "stdio"
+    },
     "rayfin": {
       "args": [
         "-y",
