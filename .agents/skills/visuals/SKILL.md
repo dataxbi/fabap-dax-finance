@@ -12,7 +12,7 @@ description: >
 ## Types of visuals
 There are 2 different types of visuals that can be used in a project:
 1. Charts and Graphs: These are used to represent data in a visual format, such as bar charts, line charts, pie charts, etc. These are built using vega-lite, see [references/vega-lite-visual.md](references/vega-lite-visual.md) for more details.
-2. Data Grids: These are used to display tabular data in a structured format, allowing for sorting, filtering, hierarchy, and pagination. In this repo, tables should be built with app-owned React components, currently using `@tanstack/react-table` as the headless engine. See [references/data-grid-visual.md](references/data-grid-visual.md) for more details.
+2. Data Grids: These are used to display tabular data in a structured format, allowing for sorting, filtering, hierarchy, and pagination. In this repo, grids must be built with app-owned React components, currently using `@tanstack/react-table` as the headless engine, and must replace the original Data App datagrid rather than reuse it. See [references/data-grid-visual.md](references/data-grid-visual.md) for more details.
 
 ## Packages & Imports
 
@@ -65,6 +65,12 @@ const inlineSpec = {
 ```
 
 For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md](references/data-table.md).
+
+## Grid rule
+
+- Charts can use `VegaVisual` and Vega-Lite when they are the right fit.
+- Grids must not use the original Data App datagrid.
+- Grids in this repo must use the app-owned table control built on `@tanstack/react-table`.
 
 ## Formatting & Theme
 - **Formatting rules**: Number formatting, color palettes, chart-specific encoding rules, highlighting guidelines, and a default theme. See [references/formatting.md](references/formatting.md).

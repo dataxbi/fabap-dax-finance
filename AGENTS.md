@@ -2,13 +2,13 @@
 
 ## Purpose
 
-You will help the user build out this React-based web app that visualizes data from Power BI semantic models. The app fetches live data via DAX queries, renders charts using Vega-Lite and renders tables using app-owned React table components, and supports light/dark theming. Your job is to discover the user's data, write correct DAX queries, build React components that fetch and display that data, and validate the result in the browser.
+You will help the user build out this React-based web app that visualizes data from Power BI semantic models. The app fetches live data via DAX queries, can render charts using Vega-Lite, renders tables using app-owned React table components, and supports light/dark theming. Your job is to discover the user's data, write correct DAX queries, build React components that fetch and display that data, and validate the result in the browser.
 
 ## Sub-Agent Delegation
 
 Break tasks into independent pieces and delegate them to sub-agents running in parallel. Don't do work sequentially when it can be done concurrently.
 
-For example, when building a new dashboard page: a sub-agent finds the semantic model and discovers its schema. Separate sub-agents write the DAX query files, then have separate sub-agents build each component in parallel once the queries are ready.
+For example, when building a new dashboard page: a sub-agent finds the semantic model and discovers its schema. Separate sub-agents write the DAX query files, then have separate sub-agents build each chart, summary card, and table component in parallel once the queries are ready.
 
 ## Project Structure
 
@@ -23,7 +23,7 @@ src/
 ├── App.tsx                # Main dashboard layout
 ├── ErrorFallback.tsx      # Error boundary fallback UI
 ├── global.css             # Tailwind v4 @theme design tokens
-├── components/            # Dashboard UI components (cards, charts, banners)
+├── components/            # Dashboard UI components (cards, charts, table shell, banners)
 ├── hooks/                 # React hooks (data fetching, theming)
 ├── lib/                   # Utilities, Fabric client
 ├── queries/               # DAX queries (.dax) + Vega-Lite specs (.json) + factory functions (.ts), grouped by page/domain
@@ -32,7 +32,7 @@ src/
 
 ### Query & Spec Organization
 
-DAX queries and Vega-Lite specs live in `src/queries/`, grouped by dashboard page or domain. Each visualization gets files sharing the same kebab-case base name: one or more `.dax` files for queries, a `.json` file for the Vega-Lite spec, and a `.ts` factory file that imports them and exports `{ connection, query, columnMetadata, vegaLiteSpec }`. The factory function accepts optional parameters to select between query variants or modify the spec:
+DAX queries and Vega-Lite specs live in `src/queries/`, grouped by dashboard page or domain. Each visualization gets files sharing the same kebab-case base name: one or more `.dax` files for queries, a `.json` file for the Vega-Lite spec when the visualization is a chart, and a `.ts` factory file that imports what it needs and exports `{ connection, query, columnMetadata }` for tables or `{ connection, query, columnMetadata, vegaLiteSpec }` for charts. The factory function accepts optional parameters to select between query variants or modify the query and/or spec:
 
 ```
 src/queries/
@@ -40,8 +40,8 @@ src/queries/
 ├── {page-or-domain}/                   # Group by dashboard page or domain
 │   ├── {visualization-name}.dax        # DAX query (plain text)
 │   ├── {visualization-name}-{variant}.dax  # Additional query variants (optional)
-│   ├── {visualization-name}.json       # Vega-Lite spec (JSON)
-│   ├── {visualization-name}.ts         # Factory function: imports .dax + .json, exports { connection, query, vegaLiteSpec, columnMetadata }
+│   ├── {visualization-name}.json       # Vega-Lite spec (optional, for charts)
+│   ├── {visualization-name}.ts         # Factory function: imports .dax and optionally .json, exports query metadata for the component
 │   └── index.ts                        # Re-exports all visualizations in this group
 ```
 
@@ -71,7 +71,7 @@ interface RevenueByRegionParams {
 
 export function revenueByRegion(params?: RevenueByRegionParams) {
   let query = baseQuery;
-  let vegaLiteSpec = spec; // Should clone if modifying
+  let vegaLiteSpec: VisualizationSpec = spec;
 
   if (params?.categories?.length) {
     // make changes to the DAX query to filter by the specified categories and update the query variable
@@ -139,8 +139,8 @@ export const columnMetadata: ColumnMetadataMap = {
 - **All DAX lives in `.dax` files.** Never inline full DAX query strings in `.ts` factory files. If a parameter changes the query structure, create a separate `.dax` file for each variant and select the right one in the factory function. Small modifications — such as replacing filter value placeholders, wrapping the query with `CALCULATETABLE` to apply filters, or substituting a column reference — are acceptable in `.ts`, but the base query must always come from a `.dax` import.
 - **Name files after the visualization they drive.** Use kebab-case base names (e.g., `revenue-by-region.dax`, `revenue-by-region.json`, `revenue-by-region.ts`). Variant `.dax` files append a suffix (e.g., `revenue-trend-yearly.dax`, `revenue-trend-quarterly.dax`).
 - **Use `.dax` for queries.** Plain-text DAX files keep queries readable and diff-friendly. Import them with Vite's `?raw` suffix.
-- **Use `.json` for specs.** JSON files get free schema validation in editors and are importable as modules by default in Vite.
-- **Barrel `.ts` exports a factory function.** The function name is the camelCase version of the kebab-case file name (e.g., `revenueByRegion` for `revenue-by-region.ts`). It accepts optional parameters (typed per use case) and returns `{ connection, query, columnMetadata, vegaLiteSpec }`.
+- **Use `.json` for chart specs.** JSON files get free schema validation in editors and are importable as modules by default in Vite.
+- **Barrel `.ts` exports a factory function.** The function name is the camelCase version of the kebab-case file name (e.g., `revenueByRegion` for `revenue-by-region.ts`). It accepts optional parameters (typed per use case) and returns the query metadata needed by the calling component.
 - **Group by page/domain.** Use subfolders when the dashboard has multiple pages or logical sections. For simple single-page dashboards, a flat structure under `src/queries/` is fine.
 - **Re-export via `index.ts`.** Each subfolder and the root `src/queries/index.ts` should re-export all modules for clean imports.
 
@@ -200,8 +200,8 @@ Iterate on queries until they return the expected columns and data shape.
 Once queries are validated, **promote them to the app** following the [Query & Spec Organization](#query--spec-organization) conventions above:
 1. Save each query as a `.dax` file in `src/queries/` following the naming and grouping conventions.
 2. **Capture column metadata** — copy the exact column names from the query output as dictionary keys in a `columnMetadata: ColumnMetadataMap` constant. See the conventions above for the full format and rules.
-3. Create the corresponding `.json` Vega-Lite spec — refer to [visuals](.agents/skills/visuals/SKILL.md). Use the cleaned `name` values from the metadata for Vega-Lite field encodings (they are already free of characters that require escaping). Use `displayName` values for axis titles, legend labels, and tooltip headers. Use `format` values for axis/tooltip formatting.
-4. Create the barrel `.ts` file with a **factory function** that returns `{ connection, query, columnMetadata, vegaLiteSpec }`.
+3. Create the corresponding `.json` Vega-Lite spec when the visualization is a chart — refer to [visuals](.agents/skills/visuals/SKILL.md). Use the cleaned `name` values from the metadata for Vega-Lite field encodings. Use `displayName` values for axis titles, legend labels, and tooltip headers. Use `format` values for axis/tooltip formatting.
+4. Create the barrel `.ts` file with a **factory function** that returns the query metadata needed by the calling component.
 
 ### 4. UX Design for the app
 
@@ -209,11 +209,11 @@ Principles for overall aesthetics, theming, layout, and accessibility requiremen
 
 ### 5. Build components with data (app code phase)
 
-Use the `useSemanticModelQuery` hook from `src/hooks/use-semantic-model-query.ts` — components call the factory functions from `src/queries/` and destructure `{ connection, query, columnMetadata, vegaLiteSpec }` from the result.
+Use the `useSemanticModelQuery` hook from `src/hooks/use-semantic-model-query.ts` — components call the factory functions from `src/queries/` and destructure the query metadata they need from the result.
 
 Use `toDataTable()` from `src/lib/to-data-table.ts` to convert the SDK's `QueryTable` (from `data.table`) into a `DataTable` by merging it with the `columnMetadata` from the factory function result. This applies everywhere the data is consumed like rendering in `VegaVisual`, transforming rows for app-owned tables, displaying values in custom components, or any other usage.
 
-`VegaVisual` and app-owned table components should call factory functions for query + spec + columnMetadata — never define specs inline in component files. Refer to the [visuals](.agents/skills/visuals/SKILL.md) skill when building them.
+`VegaVisual` and app-owned table components should call factory functions for query + spec + columnMetadata where applicable. Do not use the original Data App datagrid for grids; grids in this repo should always be implemented with the new app-owned table control.
 
 #### Example
 
@@ -224,7 +224,7 @@ import { toDataTable } from "@/lib/to-data-table";
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 
-function RevenueByRegionChart() {
+function RevenueByRegionChartAndTable() {
   const theme = useCssTheme();
   const { connection, query, columnMetadata, vegaLiteSpec } = revenueByRegion({
     categories: ["Category A"],

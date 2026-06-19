@@ -2,7 +2,7 @@
 
 ## 1. Objetivo
 
-Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrecer una visión del resultado económico del negocio con tablas detalladas y gráficos de tendencia, usando tablas propias en React y visuales basados en **Vega-Lite**.
+Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrecer una visión del resultado económico del negocio con una tabla detallada y tarjetas resumen, usando componentes propios en React.
 
 ## 2. Fuente de datos
 
@@ -13,9 +13,10 @@ Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrece
 
 ## 3. Stack de visuales
 
-- **Tablas**: componentes propios basados en `@tanstack/react-table`
-- **Gráficos**: especificaciones Vega-Lite consumidas desde `@microsoft/fabric-visuals`
-- Mantener consultas, metadatos de columna y specs desacoplados dentro de `src/queries/`
+- **Tabla principal**: componente propio basado en `@tanstack/react-table`
+- **Resumen ejecutivo**: tarjetas KPI propias en React
+- No se utiliza el datagrid original de la plantilla Data App
+- No se utilizan gráficos Vega-Lite en la versión actual
 
 ## 4. Alcance funcional
 
@@ -23,8 +24,8 @@ Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrece
 
 - Tabla P&L con filas de cuenta/categoría y columnas de periodo
 - Variaciones absolutas y porcentuales respecto a periodo anterior y año anterior
-- Gráficos de tendencia de ingresos, gastos y resultado
-- Posibilidad de desglose por dimensiones disponibles en el modelo
+- Tarjetas resumen para importe, presupuesto y EBITDA del último ejercicio disponible
+- Jerarquía expandible, filtros por columna, ordenación y menú de columnas en la tabla
 
 ## 5. Principios de diseño
 
@@ -42,9 +43,9 @@ Construir una Fabric App ejecutiva sobre el modelo semántico de P&L para ofrece
 
 - Layout en `src/App.tsx`
 - Consultas organizadas en `src/queries/pl/`
-- Tablas con componentes propios basados en TanStack Table
-- Gráficos con `VegaVisual` y specs Vega-Lite definidas en `src/queries/`
-- Conversión de resultados con `toDataTable` (o helper equivalente)
+- Tabla jerárquica en `src/components/pl/pl-report-shell.tsx`
+- Tarjetas resumen en `src/components/pl/status-card.tsx`
+- Adaptación de resultados con `src/lib/query-table-rows.ts` y `src/lib/pl-grid.ts`
 
 ## 7. Validación
 
@@ -65,4 +66,5 @@ La solución se considerará completa cuando:
 2. El informe P&L esté operativo con datos reales.
 3. La experiencia use branding Dataxbi y formato es-ES.
 4. Las consultas DAX devuelvan datos reales del modelo.
-5. La app quede validada dentro del portal de Fabric.
+5. La tabla PyG use el control propio basado en TanStack Table en lugar del datagrid original.
+6. La app quede validada dentro del portal de Fabric.

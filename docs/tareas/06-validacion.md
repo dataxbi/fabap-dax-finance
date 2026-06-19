@@ -13,4 +13,4 @@ Verificar que la solución funciona con datos reales y se visualiza correctament
 ## Criterio de terminado
 
 - La app funciona de forma estable y el diseño se mantiene consistente en la validación final.
-- La tabla P&L y los gráficos muestran datos reales correctamente formateados.
+- La tabla P&L y las tarjetas resumen muestran datos reales correctamente formateados.

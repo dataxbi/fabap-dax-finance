@@ -13,4 +13,4 @@ Descubrir el schema del modelo P&L y definir las consultas DAX necesarias para e
 ## Criterio de terminado
 
 - Todas las visualizaciones consumen datos reales del modelo sin datos mock.
-- Las queries devuelven las columnas esperadas para tabla P&L y gráficos.
+- Las queries devuelven las columnas esperadas para la tabla P&L y el resumen anual.
